@@ -75,7 +75,7 @@ We have a discord server!
 
 #### 1. Sideload Application
 Download and install MeloNX using [PlumeImpactor](https://github.com/claration/Impactor/releases) on a computer.
-- [Download **MeloNX** From Releases](https://starforgejo.dev/projects/MeloNX/releases)
+- [Download **MeloNX** From Releases](https://starforgejo.dev/projects/MeloNX/releases/latest)
 - Open PlumeImpactor > Click Settings > Click Login
 - Login with the same Apple ID you are using for SideStore (or AltStore).
 - Import the MeloNX .ipa you downloaded earlier.
@@ -105,7 +105,7 @@ To have MeloNX show inside SideStore (or AltStore), You must re-install it:
 
 #### 1. Sideload MeloNX
 Download and install MeloNX using your preferred Apple ID (NOT CERT) sideloader:
-- [Download MeloNX from Releases](https://starforgejo.dev/projects/MeloNX/releases)
+- [Download MeloNX from Releases](https://starforgejo.dev/projects/MeloNX/releases/latest)
 
 #### 2. Enable Memory Entitlement
 - Visit [Apple Developer Identifiers](https://developer.apple.com/account/resources/identifiers).
@@ -139,7 +139,7 @@ Download and install MeloNX using your preferred Apple ID (NOT CERT) sideloader:
 #### 1. Sideload Applications
 
 Download and install both apps using your preferred **APPLE ID** sideloader:
-- **MeloNX**: [Download from Releases](https://starforgejo.dev/projects/MeloNX/releases)
+- **MeloNX**: [Download from Releases](https://starforgejo.dev/projects/MeloNX/releases/latest)
 - **Entitlement App**: [Download IPA](https://github.com/hugeBlack/GetMoreRam/releases/download/nightly/GetMoreRam.ipa)
 #### 2. Enable Memory Entitlement
 
