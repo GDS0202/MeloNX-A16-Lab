@@ -46,7 +46,9 @@ class MetalView: MTKView {
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesBegan(touches, with: event)
         
-        menuViewShower.triggerButton()
+        Task.detached {
+            await self.menuViewShower.triggerButton()
+        }
         
         let disabled = UserDefaults.standard.bool(forKey: "disableTouch")
         guard !disabled else { return }
@@ -96,7 +98,9 @@ class MetalView: MTKView {
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesMoved(touches, with: event)
         
-        menuViewShower.triggerButton()
+        Task.detached {
+            await self.menuViewShower.triggerButton()
+        }
         
         let disabled = UserDefaults.standard.bool(forKey: "disableTouch")
         guard !disabled else { return }
@@ -186,6 +190,12 @@ struct MetalViewRepresentable: UIViewRepresentable {
             
             if metalLayer.device == nil {
                 metalLayer.device = MTLCreateSystemDefaultDevice()
+            }
+            
+            view.framebufferOnly = false
+
+            if #available(iOS 16.0, *) {
+                MetalFxBridge.registerCallbacks()
             }
             
             let layerPtr = Unmanaged.passUnretained(metalLayer).toOpaque()

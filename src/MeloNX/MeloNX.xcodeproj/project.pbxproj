@@ -12,6 +12,7 @@
 		4EA6523B2FBD941E00D6FB52 /* NavigationStackBackport in Frameworks */ = {isa = PBXBuildFile; productRef = 4EA6523A2FBD941E00D6FB52 /* NavigationStackBackport */; };
 		4EC482D22F8D101B008C1955 /* Ryujinx.Library.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4EC482D12F8D101B008C1955 /* Ryujinx.Library.dylib */; };
 		4EC482D32F8D101B008C1955 /* Ryujinx.Library.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 4EC482D12F8D101B008C1955 /* Ryujinx.Library.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		4EDA000100000000000A000B /* MeloNXRamDonor.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 4EDA000100000000000A0002 /* MeloNXRamDonor.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -21,6 +22,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 4EF06B692FA36B2400E56036;
 			remoteInfo = Ryujinx;
+		};
+		4EDA000100000000000A000C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 4ED5D5032F80DD02007DB057 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4EDA000100000000000A0001;
+			remoteInfo = MeloNXRamDonor;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -36,12 +44,24 @@
 			name = "Embed Libraries";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		4EDA000100000000000A000A /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				4EDA000100000000000A000B /* MeloNXRamDonor.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		4E696874302702350024B484 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
 		4EC482D12F8D101B008C1955 /* Ryujinx.Library.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = Ryujinx.Library.dylib; path = "../Ryujinx.Library/bin/Release/net10.0/ios-arm64/native/Ryujinx.Library.dylib"; sourceTree = "<group>"; };
 		4ED5D50B2F80DD02007DB057 /* MeloNX.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MeloNX.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4EDA000100000000000A0002 /* MeloNXRamDonor.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MeloNXRamDonor.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -52,6 +72,13 @@
 				Info.plist,
 			);
 			target = 4ED5D50A2F80DD02007DB057 /* MeloNX */;
+		};
+		4EDA000100000000000A000E /* Exceptions for "MeloNXRamDonor" folder in "MeloNXRamDonor" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 4EDA000100000000000A0001 /* MeloNXRamDonor */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -100,6 +127,14 @@
 			path = MeloNX;
 			sourceTree = "<group>";
 		};
+		4EDA000100000000000A0003 /* MeloNXRamDonor */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				4EDA000100000000000A000E /* Exceptions for "MeloNXRamDonor" folder in "MeloNXRamDonor" target */,
+			);
+			path = MeloNXRamDonor;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -111,6 +146,13 @@
 				4E5FB8FA2F9612F7005969EC /* Melo-Controller in Frameworks */,
 				4EC482D22F8D101B008C1955 /* Ryujinx.Library.dylib in Frameworks */,
 				4EA6523B2FBD941E00D6FB52 /* NavigationStackBackport in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4EDA000100000000000A0005 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -130,6 +172,7 @@
 			isa = PBXGroup;
 			children = (
 				4ED5D50D2F80DD02007DB057 /* MeloNX */,
+				4EDA000100000000000A0003 /* MeloNXRamDonor */,
 				4EC480BC2F8CCA70008C1955 /* Frameworks */,
 				4ED5D50C2F80DD02007DB057 /* Products */,
 			);
@@ -139,6 +182,7 @@
 			isa = PBXGroup;
 			children = (
 				4ED5D50B2F80DD02007DB057 /* MeloNX.app */,
+				4EDA000100000000000A0002 /* MeloNXRamDonor.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -173,11 +217,13 @@
 				4ED5D5082F80DD02007DB057 /* Frameworks */,
 				4ED5D5092F80DD02007DB057 /* Resources */,
 				4EC480C52F8CCA91008C1955 /* Embed Libraries */,
+				4EDA000100000000000A000A /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				4EA2CB242FD924E000BE964F /* PBXTargetDependency */,
+				4EDA000100000000000A000D /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				4ED5D50D2F80DD02007DB057 /* MeloNX */,
@@ -190,6 +236,28 @@
 			productName = MeloNX;
 			productReference = 4ED5D50B2F80DD02007DB057 /* MeloNX.app */;
 			productType = "com.apple.product-type.application";
+		};
+		4EDA000100000000000A0001 /* MeloNXRamDonor */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4EDA000100000000000A0007 /* Build configuration list for PBXNativeTarget "MeloNXRamDonor" */;
+			buildPhases = (
+				4EDA000100000000000A0004 /* Sources */,
+				4EDA000100000000000A0005 /* Frameworks */,
+				4EDA000100000000000A0006 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				4EDA000100000000000A0003 /* MeloNXRamDonor */,
+			);
+			name = MeloNXRamDonor;
+			packageProductDependencies = (
+			);
+			productName = MeloNXRamDonor;
+			productReference = 4EDA000100000000000A0002 /* MeloNXRamDonor.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -204,6 +272,9 @@
 					4ED5D50A2F80DD02007DB057 = {
 						CreatedOnToolsVersion = 26.2;
 						LastSwiftMigration = 2620;
+					};
+					4EDA000100000000000A0001 = {
+						CreatedOnToolsVersion = 26.2;
 					};
 					4EF06B692FA36B2400E56036 = {
 						CreatedOnToolsVersion = 26.2;
@@ -229,6 +300,7 @@
 			projectRoot = "";
 			targets = (
 				4ED5D50A2F80DD02007DB057 /* MeloNX */,
+				4EDA000100000000000A0001 /* MeloNXRamDonor */,
 				4EF06B692FA36B2400E56036 /* Ryujinx */,
 			);
 		};
@@ -236,6 +308,13 @@
 
 /* Begin PBXResourcesBuildPhase section */
 		4ED5D5092F80DD02007DB057 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4EDA000100000000000A0006 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -252,6 +331,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		4EDA000100000000000A0004 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -259,6 +345,11 @@
 			isa = PBXTargetDependency;
 			target = 4EF06B692FA36B2400E56036 /* Ryujinx */;
 			targetProxy = 4EA2CB232FD924E000BE964F /* PBXContainerItemProxy */;
+		};
+		4EDA000100000000000A000D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4EDA000100000000000A0001 /* MeloNXRamDonor */;
+			targetProxy = 4EDA000100000000000A000C /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -396,7 +487,7 @@
 				CODE_SIGN_ENTITLEMENTS = MeloNX/MeloNX.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 4D52P7Z7YN;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -409,6 +500,7 @@
 				INFOPLIST_KEY_GCSupportsGameMode = YES;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.games";
 				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "MeloNX uses Bluetooth to connect to Steam Controllers and receive game input.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "MeloNX needs local network access for LAN / Local Multiplaer";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -424,7 +516,7 @@
 					"$(PROJECT_DIR)/MeloNX/Frameworks",
 					"$(PROJECT_DIR)/MeloNX/Dependencies",
 				);
-				MARKETING_VERSION = 2.6;
+				MARKETING_VERSION = 2.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stossy11.MeloNX;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -449,7 +541,7 @@
 				CODE_SIGN_ENTITLEMENTS = MeloNX/MeloNX.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 4D52P7Z7YN;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -462,6 +554,7 @@
 				INFOPLIST_KEY_GCSupportsGameMode = YES;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.games";
 				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "MeloNX uses Bluetooth to connect to Steam Controllers and receive game input.";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "MeloNX needs local network access for LAN / Local Multiplaer";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -477,7 +570,7 @@
 					"$(PROJECT_DIR)/MeloNX/Frameworks",
 					"$(PROJECT_DIR)/MeloNX/Dependencies",
 				);
-				MARKETING_VERSION = 2.6;
+				MARKETING_VERSION = 2.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.stossy11.MeloNX;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -487,6 +580,63 @@
 				SWIFT_OBJC_BRIDGING_HEADER = "MeloNX/Core/MeloNX-Bridging-Header.h";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		4EDA000100000000000A0008 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = MeloNXRamDonor/MeloNXRamDonor.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MeloNXRamDonor/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "MeloNX Memory";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 2.7;
+				PRODUCT_BUNDLE_IDENTIFIER = com.stossy11.MeloNX.RamDonor;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		4EDA000100000000000A0009 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = MeloNXRamDonor/MeloNXRamDonor.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MeloNXRamDonor/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "MeloNX Memory";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 2.7;
+				PRODUCT_BUNDLE_IDENTIFIER = com.stossy11.MeloNX.RamDonor;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
@@ -535,6 +685,15 @@
 			buildConfigurations = (
 				4ED5D5172F80DD03007DB057 /* Debug */,
 				4ED5D5182F80DD03007DB057 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4EDA000100000000000A0007 /* Build configuration list for PBXNativeTarget "MeloNXRamDonor" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4EDA000100000000000A0008 /* Debug */,
+				4EDA000100000000000A0009 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

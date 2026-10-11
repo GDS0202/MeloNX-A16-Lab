@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -17,6 +17,10 @@
     <HybridGlobalization>true</HybridGlobalization>
     <OptimizationPreference>Speed</OptimizationPreference>
   </PropertyGroup>
+
+  <ItemGroup>
+    <RuntimeHostConfigurationOption Include="System.GC.ConserveMemory" Value="9" />
+  </ItemGroup>
 
   <ItemGroup>
   <TrimmerRootDescriptor Include="TrimmerRoots.xml" />

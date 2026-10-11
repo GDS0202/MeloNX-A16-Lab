@@ -44,12 +44,15 @@ class FileImporterManager: NSObject, ObservableObject, UIDocumentPickerDelegate 
     func importFiles(
         types: [UTType],
         allowMultiple: Bool = false,
+        securityScoped: Bool = true,
         completion: @escaping (Result<[URL], Error>) -> Void
     ) {
         self.currentCompletion = { result in
             Task { @MainActor in
                 completion(result)
-                self.stopAccessingSecurityScopedResources()
+                if securityScoped {
+                    self.stopAccessingSecurityScopedResources()
+                }
             }
         }
         

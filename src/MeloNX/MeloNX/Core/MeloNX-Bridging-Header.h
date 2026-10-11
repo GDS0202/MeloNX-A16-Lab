@@ -3,8 +3,8 @@
 //
 
 
-#ifndef MeloNX-BridgingHeader_h
-#define MeloNX-BridgingHeader_h
+#ifndef MeloNX_BridgingHeader_h
+#define MeloNX_BridgingHeader_h
 
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
@@ -14,6 +14,7 @@
 #include <signal.h>
 #include <stdint.h>
 #include "Models/Options/NativeOptions.h" 
+#include "Memory/MLXRamDonor.h"
 #include <IOKit/IOKitLib.h>
 
 struct GameInfoC {
@@ -35,6 +36,11 @@ struct DlcNcaListC {
     bool success;
     unsigned int size;
     struct DlcNcaListItemC* items;
+};
+
+struct SaveDataPathC {
+    bool success;
+    char* value;
 };
 
 struct AvatarArrayC {
@@ -63,31 +69,15 @@ void UnregisterCallback(const char* name);
 uint8_t InvokeCallback(const char* name, const void* data, int32_t len);
 
 uint64_t execute_function_pointer(void* functionPtr);
+
+void report_memory_pressure(uint8_t critical);
+
+void offer_donated_memory(void* baseAddress, uint64_t size);
+
+void withdraw_donated_memory(void);
+
+uint8_t offer_donated_gpu_memory(void* baseAddress, uint64_t size);
+uint8_t withdraw_donated_gpu_memory(void);
 uint64_t execute_guest_function_pointer(void* functionPtr, void* nativeContextPtr);
 
-static void app_initializer(void);
-
-
-typedef struct {
-    sigjmp_buf buffer;
-    bool isActive;
-    int caughtSignal;
-    siginfo_t caughtSiginfo;
-} SignalJumpContext;
-
-static inline int signal_setjmp(SignalJumpContext *ctx) {
-    return sigsetjmp(ctx->buffer, 1);
-}
-
-static inline void signal_longjmp(SignalJumpContext *ctx, int val) {
-    siglongjmp(ctx->buffer, val);
-}
-
-static inline SignalJumpContext signal_make_context(void) {
-    SignalJumpContext ctx;
-    ctx.isActive = false;
-    ctx.caughtSignal = 0;
-    return ctx;
-}
-
-#endif
+#endif /* MeloNX_BridgingHeader_h */

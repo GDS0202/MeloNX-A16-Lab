@@ -67,6 +67,7 @@ namespace Ryujinx.Library
         public AntiAliasing AntiAliasing { get; set; }
         public ScalingFilter ScalingFilter { get; set; }
         public int ScalingFilterLevel { get; set; }
+        public float MetalFxUpscaleFactor { get; set; } = 2.0f;
 
         public NativeTouchDriver MouseDriver;
         private readonly InputManager _inputManager;
@@ -185,6 +186,7 @@ namespace Ryujinx.Library
         {
             Renderer?.Window.SetScalingFilter(ScalingFilter);
             Renderer?.Window.SetScalingFilterLevel(ScalingFilterLevel);
+            Renderer?.Window.SetMetalFxUpscaleFactor(MetalFxUpscaleFactor);
         }
 
         public void Render()

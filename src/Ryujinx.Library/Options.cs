@@ -199,6 +199,9 @@ namespace Ryujinx.Library
         [Option("enable-texture-recompression", Required = false, Default = false, HelpText = "Enables Texture recompression.")]
         public bool EnableTextureRecompression { get; set; }
 
+        [Option("enable-host-memory-budget-tracking", Required = false, Default = true, HelpText = "Sizes and trims the GPU resource caches from the host memory budget.")]
+        public bool EnableHostMemoryBudgetTracking { get; set; }
+
         [Option("disable-docked-mode", Required = false, HelpText = "Disables Docked Mode.")]
         public bool DisableDockedMode { get; set; }
 
@@ -302,6 +305,9 @@ namespace Ryujinx.Library
 
         [Option("scaling-filter-level", Required = false, Default = 0, HelpText = "Set the scaling filter intensity (currently only applies to FSR). [0-100]")]
         public int ScalingFilterLevel { get; set; }
+
+        [Option("metalfx-upscale-factor", Required = false, Default = 2.0f, HelpText = "Set the MetalFX output scale relative to the source resolution. [1.0-3.0 in 0.1 steps|4=Host]")]
+        public float MetalFxUpscaleFactor { get; set; }
 
         // Hacks
 
@@ -454,6 +460,8 @@ namespace Ryujinx.Library
         public AntiAliasing  AntiAliasing;
         public ScalingFilter ScalingFilter;
         public int    ScalingFilterLevel;
+        public float  MetalFxUpscaleFactor;
+        public bool   EnableHostMemoryBudgetTracking;
 
         public bool   ExpandRAM;
         public bool   IgnoreMissingServices;
@@ -581,6 +589,8 @@ namespace Ryujinx.Library
                 AntiAliasing            = n->AntiAliasing,
                 ScalingFilter           = n->ScalingFilter,
                 ScalingFilterLevel      = n->ScalingFilterLevel,
+                MetalFxUpscaleFactor    = n->MetalFxUpscaleFactor,
+                EnableHostMemoryBudgetTracking = n->EnableHostMemoryBudgetTracking,
 
                 ExpandRAM             = n->ExpandRAM,
                 IgnoreMissingServices = n->IgnoreMissingServices,

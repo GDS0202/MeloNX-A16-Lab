@@ -1,5 +1,6 @@
 using Ryujinx.Common.Logging;
 using Ryujinx.Graphics.GAL;
+using Ryujinx.Memory;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -61,6 +62,7 @@ namespace Ryujinx.Graphics.Gpu.Image
 
         private const float MemoryScaleFactor = 0.50f;
         private const int UnifiedMemoryDivisor = 16;
+        private const int ConstrainedMemoryDivisor = 8;
         private ulong _maxCacheMemoryUsage = DefaultTextureSizeCapacity;
 
         private readonly LinkedList<Texture> _textures;
@@ -88,12 +90,23 @@ namespace Ryujinx.Graphics.Gpu.Image
 
             if (isAppleUnifiedMemory)
             {
-                _maxCacheMemoryUsage = Math.Clamp(
+                ulong? hostShare = GraphicsConfig.EnableHostMemoryBudgetTracking
+                    ? HostMemoryBudget.GetShare(
+                        ConstrainedMemoryDivisor,
+                        MinUnifiedTextureSizeCapacity,
+                        MaxUnifiedTextureSizeCapacity)
+                    : null;
+
+                _maxCacheMemoryUsage = hostShare ?? Math.Clamp(
                     cpuMemorySize / UnifiedMemoryDivisor,
                     MinUnifiedTextureSizeCapacity,
                     MaxUnifiedTextureSizeCapacity);
 
-                Logger.Info?.Print(LogClass.Gpu, $"AutoDelete cache memory limit: {_maxCacheMemoryUsage / MiB} MiB (me when apple unified memory)");
+                string basis = hostShare.HasValue
+                    ? $"{HostMemoryBudget.TotalBytes / MiB} MiB process budget"
+                    : "guest memory size";
+
+                Logger.Info?.Print(LogClass.Gpu, $"AutoDelete cache memory limit: {_maxCacheMemoryUsage / MiB} MiB (Apple unified memory, from {basis})");
                 return;
             }
 
@@ -223,6 +236,46 @@ namespace Ryujinx.Graphics.Gpu.Image
             {
                 RemoveLeastUsedTexture();
             }
+        }
+
+        private const ulong TrimFloorDivisor = 8;
+
+        /// <summary>
+        /// Evicts textures in response to host memory pressure, in proportion to what the cache is
+        /// actually holding. The limit itself is left alone, so the cache refills as it is used again.
+        /// </summary>
+        /// <param name="level">How much the host wants back</param>
+        /// <returns>Number of bytes evicted</returns>
+        public ulong Trim(MemoryPressureLevel level)
+        {
+            if (!GraphicsConfig.EnableHostMemoryBudgetTracking)
+            {
+                return 0;
+            }
+            
+            
+            ulong target = level switch
+            {
+                MemoryPressureLevel.Critical => _totalSize / 2,
+                MemoryPressureLevel.Warning => _totalSize - (_totalSize / 4),
+                _ => _maxCacheMemoryUsage,
+            };
+
+            target = Math.Max(target, _maxCacheMemoryUsage / TrimFloorDivisor);
+
+            if (target >= _totalSize)
+            {
+                return 0;
+            }
+
+            ulong before = _totalSize;
+
+            while (_totalSize > target && _textures.Count > 0)
+            {
+                RemoveLeastUsedTexture();
+            }
+
+            return before - _totalSize;
         }
 
         /// <summary>
