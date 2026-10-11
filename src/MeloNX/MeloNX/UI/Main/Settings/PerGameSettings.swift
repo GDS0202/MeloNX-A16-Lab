@@ -434,6 +434,9 @@ struct PerGameSettingsView: View {
                     NativeToggleRow("Show Frame Time", icon: "clock.arrow.2.circlepath",
                                     isOn: nativeSettingsManager.performanceFrameTime(true).projectedValue)
                     
+                    NativeToggleRow("Show Memory Usage", icon: "memorychip",
+                                    isOn: nativeSettingsManager.performanceRam(true).projectedValue)
+                    
                     NativeToggleRow("Show FIFO", icon: "arrow.left.arrow.right",
                                     isOn: nativeSettingsManager.performanceFIFO.projectedValue)
                     
