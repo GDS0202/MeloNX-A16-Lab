@@ -17,9 +17,16 @@ if [ "$variant" = optimized ]; then
 fi
 dotnet publish src/Ryujinx.Library/Ryujinx.Library.csproj \
   -c Release -r ios-arm64 --self-contained true \
-  -p:NativeLib=Shared -p:ExtraDefineConstants=DISABLE_UPDATER \
+  -p:ExtraDefineConstants=DISABLE_UPDATER \
   | tee "$build_root/logs/native-core.log"
 native_core="src/Ryujinx.Library/bin/Release/net10.0/ios-arm64/native/Ryujinx.Library.dylib"
+# NativeAOT iOS class libraries emit a shared dylib in publish/ by default.
+# Xcode's project references the historical native/ location; stage a copy there.
+publish_core="src/Ryujinx.Library/bin/Release/net10.0/ios-arm64/publish/Ryujinx.Library.dylib"
+if [[ -s "$publish_core" ]]; then
+  mkdir -p "$(dirname "$native_core")"
+  cp "$publish_core" "$native_core"
+fi
 test -s "$native_core"
 xcodebuild -resolvePackageDependencies -project src/MeloNX/MeloNX.xcodeproj \
   -scheme MeloNX -onlyUsePackageVersionsFromResolvedFile | tee "$build_root/logs/swift-packages.log"
