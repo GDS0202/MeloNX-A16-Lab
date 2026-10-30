@@ -113,6 +113,23 @@ internal static class GameplayChecks
               LiveGraphicsSettings.Create(1, -1, 0, 0, 0, 2, 0, 4, true) == null, "Unsafe runtime settings accepted");
     }
 
+    public static void SharedControllerLifetime()
+    {
+        using var driver = new Ryujinx.Input.Native.NativeGamepadDriver();
+        nint pointer = (nint)0xA1603;
+        Check(Ryujinx.Input.Native.NativeGamepadDriver.AttachGamepad("A16 test", pointer) == pointer, "Attach failed");
+        string id = pointer.ToInt64().ToString("X");
+        var first = driver.GetGamepad(id);
+        Check(first != null && first.IsConnected, "Controller not connected");
+        first.Dispose(); // A game ending or the configuration UI releasing its borrowed handle.
+        var next = driver.GetGamepad(id);
+        Check(next != null && next.IsConnected, "Ending a game disconnected the shared controller");
+        Ryujinx.Input.Native.NativeGamepadDriver.SetButtonState(pointer, 0, 1);
+        Check(next.IsPressed(Ryujinx.Input.GamepadButtonInputId.A), "Next game lost input");
+        Ryujinx.Input.Native.NativeGamepadDriver.DetachGamepad(pointer);
+        Check(!next.IsConnected && driver.GetGamepad(id) == null, "Physical disconnect did not release controller");
+    }
+
     public static void RecompressionPolicy()
     {
         // Exercise production format selection without expanding the GPU assembly's public API.

@@ -120,7 +120,7 @@ dimostra, da sola, la causa degli scatti di BOTW.
 
 ## Cosa è verificato
 
-Per 0.3 sono passati localmente 20 controlli C# e 6 Python: scheduling,
+Per 0.3 sono passati localmente 21 controlli C# e 6 Python: scheduling,
 cache, JIT, default delle politiche host, conversioni, protocollo, callback e
 formati. Le conversioni streaming BC2/3/BC7 coincidono col riferimento su mip,
 layer e bordi parziali. I controlli Swift e la compilazione iOS vengono eseguiti
@@ -132,6 +132,14 @@ non verifica JIT, entitlement, memoria, controller o driver sul dispositivo.
 Lo script IPA manuale esistente resta disponibile per una successiva compilazione
 richiesta dall'utente, ma il suo nome di output storico contiene ancora 0.2:
 identificare questa revisione dal commit e dal build number 27103.
+
+## Compilazione manuale successiva
+
+Quando si vorrà creare un nuovo IPA: Actions → Build A16 unsigned IPA → Run
+workflow, ramo `master`, variante `optimized`. Scaricare l'artifact soltanto dopo
+il completamento riuscito e firmare come la prima IPA, mantenendo entitlement e JIT.
+Il workflow di questa revisione verifica i sorgenti e il collegamento iOS;
+non confeziona un IPA e pubblica soltanto log del compilatore.
 
 ## Controllo e confronto
 

@@ -130,6 +130,7 @@ internal static class Program
         Test("converted texture disk budget and I/O fallback", GameplayChecks.CacheBudgetAndFailure);
         Test("native callback retirement and replacement", GameplayChecks.CallbackLifetime);
         Test("runtime settings validation", GameplayChecks.LiveSettingsValidation);
+        Test("shared controller survives client disposal and detaches correctly", GameplayChecks.SharedControllerLifetime);
         Test("texture recompression OFF and native format preservation", GameplayChecks.RecompressionPolicy);
         Console.WriteLine($"{_passed} checks passed. No iPad or GPU performance claim is made.");
         return 0;

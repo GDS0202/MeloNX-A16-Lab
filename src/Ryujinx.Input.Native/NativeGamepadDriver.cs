@@ -94,7 +94,7 @@ namespace Ryujinx.Input.Native
                         {
                             _instance._gamepadIds.Remove(idString);
                         }
-                        gamepad.Dispose();
+                        gamepad.Disconnect();
                         _instance.OnGamepadDisconnected?.Invoke(idString);
                         NotifyInputUpdated();
                     }
@@ -176,7 +176,7 @@ namespace Ryujinx.Input.Native
             {
                 foreach (var gamepad in _gamepads.Values)
                 {
-                    gamepad.Dispose();
+                    gamepad.Disconnect();
                 }
 
                 lock (_idLock)

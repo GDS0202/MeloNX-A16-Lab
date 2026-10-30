@@ -23,9 +23,12 @@ PASS converted texture cache identity, ownership and corruption
 PASS converted texture disk budget and I/O fallback
 PASS native callback retirement and replacement
 PASS runtime settings validation
+PASS shared controller survives client disposal and detaches correctly
 PASS texture recompression OFF and native format preservation
-20 checks passed. No iPad or GPU performance claim is made.
+21 checks passed. No iPad or GPU performance claim is made.
 
 Python archive verification: 6 checks passed.
-Swift/iOS compile: see source-check CI for this commit.
+Initial source CI de59cc1: Linux complete core and 20 regressions passed; 3 Swift groups and iOS host feedback typecheck passed.
+Full iOS compiler found missing Combine imports in statistics views; fixed in following commit.
+Final iOS source-check result: see Actions for the latest branch commit.
 No iPad benchmark or visual correctness claim.

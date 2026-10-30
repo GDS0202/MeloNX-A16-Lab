@@ -258,7 +258,15 @@ namespace Ryujinx.Input.Native
             }
         }
 
-        public void Dispose() => IsConnected = false;
+        // GetGamepad returns the driver's shared handle. Per-game clients borrow it;
+        // disposing a NpadController must not disconnect the physical controller.
+        public void Dispose() { }
+
+        internal void Disconnect()
+        {
+            IsConnected = false;
+            ResetStateInternal();
+        }
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]

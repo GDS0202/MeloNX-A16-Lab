@@ -89,3 +89,10 @@ campionamento del driver Metal/MoltenVK e non dimostra l'assenza del viola in BO
 La compilazione iOS viene controllata con `xcodebuild build`, senza archive,
 confezionamento o pubblicazione di un IPA. Restano distinti controllo del sorgente
 e misure di fluidità del gioco sull'hardware.
+
+Ulteriore difetto di ritorno/riavvio trovato nella revisione: `NativeGamepad.Dispose`
+marcava disconnesso l'handle condiviso del driver quando un client per gioco o
+la configurazione lo rilasciavano. Il possesso ora è esplicito: `Dispose` del
+client non disconnette; `DetachGamepad` e lo smaltimento del driver lo fanno.
+Un test riproduce rilascio dal primo titolo, input nel successivo e distacco reale.
+Eliminata anche l'apertura di un handle tastiera mai utilizzato a ogni Window.

@@ -74,7 +74,6 @@ namespace Ryujinx.Library
 
         public NativeTouchDriver MouseDriver;
         private readonly InputManager _inputManager;
-        private readonly IKeyboard _keyboardInterface;
         private readonly GraphicsDebugLevel _glLogLevel;
         private readonly Stopwatch _chrono;
         private readonly long _ticksPerFrame;
@@ -114,7 +113,6 @@ namespace Ryujinx.Library
             _inputManager.SetMouseDriver(MouseDriver);
             NpadManager = _inputManager.CreateNpadManager();
             TouchScreenManager = _inputManager.CreateTouchScreenManager();
-            _keyboardInterface = (IKeyboard)_inputManager.KeyboardDriver.GetGamepad("0");
             _glLogLevel = glLogLevel;
             _chrono = new Stopwatch();
             _ticksPerFrame = Stopwatch.Frequency / StatisticsUpdatesPerSecond;
@@ -219,64 +217,46 @@ namespace Ryujinx.Library
                 Device.Gpu.SetGpuThread();
                 try
                 {
-                Device.Gpu.InitializeShaderCache(_gpuCancellationTokenSource.Token);
+                    Device.Gpu.InitializeShaderCache(_gpuCancellationTokenSource.Token);
 
-                while (_isActive)
-                {
-                    if (_isStopped)
+                    while (_isActive)
                     {
-                        return;
-                    }
-
-                    _pauseEvent.WaitOne();
-                    if (_isStopped) break;
-                    ApplyPendingGraphics();
-
-                    _ticks += _chrono.ElapsedTicks;
-
-                    _chrono.Restart();
-
-                    if (Device.WaitFifo())
-                    {
-                        Device.Statistics.RecordFifoStart();
-                        Device.ProcessFrame();
-                        Device.Statistics.RecordFifoEnd();
-                    }
-
-                    if (Device.PresentLoop(SwapBuffers))
-                    {
-                        if (!_ranFirstFrame)
-                        { 
-                            _ranFirstFrame = true;
-                            SendStatistics(false);
-                         }
-                        
-                    }
-
-                    if (_ticks >= _ticksPerFrame)
-                    {
-                        string dockedMode = Device.System.State.DockedMode ? "Docked" : "Handheld";
-                        float scale = GraphicsConfig.ResScale;
-                        if (scale != 1)
+                        if (_isStopped)
                         {
-                            dockedMode += $" ({scale}x)";
+                            return;
                         }
 
-                        
-                        SendStatistics();
+                        _pauseEvent.WaitOne();
+                        if (_isStopped) break;
+                        ApplyPendingGraphics();
 
-                        /*
-                            Device.EnableDeviceVsync,
-                            dockedMode,
-                            Device.Configuration.AspectRatio.ToText(),
-                            $"Game: {Device.Statistics.GetGameFrameRate():00.00} FPS ({Device.Statistics.GetGameFrameTime():00.00} ms)",
-                            $"FIFO: {Device.Statistics.GetFifoPercent():0.00} %",
-                            $"GPU: {_gpuDriverName}"));
-                        */
-                        
-                        _ticks = 0; // No catch-up bursts of UI callbacks after a pause or a slow frame.
+                        _ticks += _chrono.ElapsedTicks;
+
+                        _chrono.Restart();
+
+                        if (Device.WaitFifo())
+                        {
+                            Device.Statistics.RecordFifoStart();
+                            Device.ProcessFrame();
+                            Device.Statistics.RecordFifoEnd();
+                        }
+
+                        if (Device.PresentLoop(SwapBuffers))
+                        {
+                            if (!_ranFirstFrame)
+                            {
+                                _ranFirstFrame = true;
+                                SendStatistics(false);
+                             }
+
+                        }
+
+                        if (_ticks >= _ticksPerFrame)
+                        {
+                            SendStatistics();
+                            _ticks = 0; // No catch-up bursts of UI callbacks after a pause or a slow frame.
+                        }
                     }
-                }
 
                 }
                 catch (OperationCanceledException) when (_isStopped) { }

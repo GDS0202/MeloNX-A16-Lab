@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Ryujinx.Common/Ryujinx.Common.csproj" />
+    <ProjectReference Include="../../src/Ryujinx.Input.Native/Ryujinx.Input.Native.csproj" />
     <ProjectReference Include="../../src/Ryujinx.Graphics.Gpu/Ryujinx.Graphics.Gpu.csproj" />
     <ProjectReference Include="../../src/Ryujinx.Memory/Ryujinx.Memory.csproj" />
     <ProjectReference Include="../../src/Ryujinx.Graphics.Texture/Ryujinx.Graphics.Texture.csproj" />
