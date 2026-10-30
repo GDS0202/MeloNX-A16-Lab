@@ -1,0 +1,17 @@
+{
+  "date_local": "2026-10-30",
+  "timezone": "Europe/Rome",
+  "fork_version": "0.1-experimental",
+  "upstream_commit": "13700519f3abc4e6d7ed8a065b118b2cc59bcd67",
+  "sdk": "10.0.403",
+  "managed_core_linux_release": "passed",
+  "scheduler_metrics_checks": 7,
+  "archive_verifier_tests": 6,
+  "upstream_countercheck": "expected failure: ready pipeline blocked by maintenance",
+  "workflow_yaml_and_shell_syntax": "passed",
+  "ios_compilation": "not performed",
+  "ipad_test": "not performed",
+  "performance_gain": "not measured",
+  "github_publication": "not performed: browser authentication interrupted",
+  "cloud_build": "not started"
+}

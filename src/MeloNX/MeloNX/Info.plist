@@ -12,20 +12,20 @@
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
-			<string>com.stossy11.MeloNX</string>
+			<string>dev.a16lab.MeloNX</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>melonx</string>
+				<string>melonxa16</string>
 			</array>
 		</dict>
 		<dict>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
-			<string>com.stossy11.MeloNX-code</string>
+			<string>dev.a16lab.MeloNX-code</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>atariemulator</string>
+				<string>melonxa16-code</string>
 			</array>
 		</dict>
 	</array>
@@ -165,5 +165,7 @@
 			</dict>
 		</dict>
 	</array>
+	<key>CFBundleDisplayName</key>
+	<string>MeloNX A16 Lab</string>
 </dict>
 </plist>

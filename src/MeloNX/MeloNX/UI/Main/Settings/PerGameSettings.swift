@@ -231,6 +231,35 @@ struct PerGameSettingsView: View {
     
     var graphicsForm: some View {
         Form {
+            Section {
+                Button {
+                    var options = config.wrappedValue
+                    options.resScale = 1.0
+                    options.disableDockedMode = true
+                    options.disableShaderCache = false
+                    options.disablePTC = false
+                    options.enableAsyncShaderCompilation = true
+                    options.enableTextureRecompression = true
+                    options.enableHostMemoryBudgetTracking = true
+                    options.disableMacroHLE = false
+                    options.maxAnisotropy = 1.0
+                    options.antiAliasing = .none
+                    options.scalingFilter = .bilinear
+                    options.graphicsBackend = .vulkan
+                    options.loggingEnableDebug = false
+                    options.loggingEnableTrace = false
+                    options.loggingEnableFsAccessLog = false
+                    options.loggingGraphicsDebugLevel = .none
+                    options.loggingEnableError = true
+                    config.wrappedValue = options
+                    ryujinxController.savePerGameConfig(titleId)
+                } label: {
+                    Label("Apply A16 Performance – 1×", systemImage: "speedometer")
+                }
+            } footer: {
+                Text("Applies to this game: handheld 1×, shader cache, experimental async compilation and lightweight filtering. Game-controlled dynamic resolution is independent. Async compilation may temporarily omit new effects; it can be disabled below.")
+            }
+
             // Resolution Scale
             Section {
                 if nativeSettingsManager.allowCustomResValue.value {

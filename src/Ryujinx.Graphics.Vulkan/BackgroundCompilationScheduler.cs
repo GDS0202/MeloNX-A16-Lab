@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Silk.NET.Vulkan;
+using Ryujinx.Common.Logging;
 
 namespace Ryujinx.Graphics.Vulkan
 {
@@ -34,17 +35,14 @@ namespace Ryujinx.Graphics.Vulkan
 
         public Task SchedulePipelineCompile(Action<PipelineCache> action, bool highPriority = false, bool demanded = false)
         {
-            return _pipelineQueue.Schedule(workerIndex =>
-            {
-                try
-                {
-                    action(_pipelineCacheManager.GetWorkerCache(workerIndex));
-                }
-                finally
-                {
-                    _pipelineCacheManager.NotifyWorkerPipelineCreated(workerIndex);
-                }
-            }, highPriority, demanded);
+            // Signal readiness before optional cache I/O. Maintenance remains on
+            // the owning worker, before its next job, for external synchronization.
+            return _pipelineQueue.Schedule(
+                workerIndex => action(_pipelineCacheManager.GetWorkerCache(workerIndex)),
+                highPriority,
+                demanded,
+                workerIndex => _pipelineCacheManager.NotifyWorkerPipelineCreated(
+                    workerIndex, allowCheckpoint: !_pipelineQueue.HasPendingDemand));
         }
 
         public void PromoteShaderCompile(Task task)
@@ -68,14 +66,16 @@ namespace Ryujinx.Graphics.Vulkan
             private sealed class WorkItem
             {
                 private readonly Action<int> _action;
+                private readonly Action<int> _afterCompletion;
 
                 public TaskCompletionSource<bool> Completion { get; }
                 public LinkedListNode<WorkItem> Node { get; set; }
                 public bool Demanded { get; set; }
 
-                public WorkItem(Action<int> action)
+                public WorkItem(Action<int> action, Action<int> afterCompletion)
                 {
                     _action = action;
+                    _afterCompletion = afterCompletion;
                     Completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
                 }
 
@@ -89,6 +89,18 @@ namespace Ryujinx.Graphics.Vulkan
                     catch (Exception exception)
                     {
                         Completion.TrySetException(exception);
+                    }
+                    finally
+                    {
+                        try
+                        {
+                            _afterCompletion?.Invoke(workerIndex);
+                        }
+                        catch (Exception exception)
+                        {
+                            Logger.Warning?.PrintMsg(LogClass.Gpu,
+                                $"Background compilation maintenance failed: {exception}");
+                        }
                     }
                 }
 
@@ -107,6 +119,17 @@ namespace Ryujinx.Graphics.Vulkan
             private readonly string _name;
 
             private bool _stopping;
+
+            public bool HasPendingDemand
+            {
+                get
+                {
+                    lock (_queueLock)
+                    {
+                        return _demandQueue.Count != 0;
+                    }
+                }
+            }
 
             public WorkerQueue(string name, int workerCount)
             {
@@ -139,9 +162,9 @@ namespace Ryujinx.Graphics.Vulkan
                 }
             }
 
-            public Task Schedule(Action<int> action, bool highPriority, bool demanded = false)
+            public Task Schedule(Action<int> action, bool highPriority, bool demanded = false, Action<int> afterCompletion = null)
             {
-                WorkItem item = new(action);
+                WorkItem item = new(action, afterCompletion);
 
                 lock (_queueLock)
                 {

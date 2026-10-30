@@ -1,3 +1,13 @@
+# MeloNX A16 Lab — experimental fork 0.1
+
+Based on official MeloNX 2.7. Pipeline cache scheduling changes, an explicit
+per-game 1× performance preset and CPU presentation interval diagnostics.
+iOS compilation and device performance remain unverified.
+
+**[Stato del progetto e istruzioni](a16/README_IT.md)**
+
+Upstream README and attribution follow.
+
 <body>
   <p align="center">
     <a href="https://melonx.org">

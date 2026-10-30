@@ -187,3 +187,9 @@ distribution/macos/temp/
 distribution/macos/output/
 
 src/MeloNX/MeloNX.xcodeproj/project.xcworkspace/xcuserdata/*
+
+# A16 generated files
+a16/out/
+__pycache__/
+*.pyc
+!a16/validation/*.log

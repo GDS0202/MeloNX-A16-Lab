@@ -1,0 +1,5 @@
+Unhandled exception. System.InvalidOperationException: Ready pipeline is still blocked by maintenance
+   at Program.Check(Boolean value, String message) in <workspace>/tests/A16.Regression/Program.cs:line 8
+   at Program.CompletionBeforeMaintenance() in <workspace>/tests/A16.Regression/Program.cs:line 19
+   at Program.Test(String name, Action action) in <workspace>/tests/A16.Regression/Program.cs:line 11
+   at Program.Main() in <workspace>/tests/A16.Regression/Program.cs:line 109

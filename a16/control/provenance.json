@@ -1,0 +1,7 @@
+{
+  "upstream_commit": "13700519f3abc4e6d7ed8a065b118b2cc59bcd67",
+  "files": {
+    "BackgroundCompilationScheduler.cs": "9d49665cffdd0263bd83c056eddcbceb56580ec75b007fc9908f4fdf1a6eb571",
+    "PipelineCacheManager.cs": "48dc8d422dbb9922d521895e92797cdba5a94f1a3dd3d8404dee6356f92dd29c"
+  }
+}

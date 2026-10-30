@@ -1,0 +1,13 @@
+PASS pipeline completion precedes maintenance
+PASS maintenance failure does not fail pipeline
+00:00:00.023 |W| Vulkan Pipeline Compile 0 Gpu : Background compilation maintenance failed: System.IO.IOException: Injected cache I/O failure
+   at Program.<>c__DisplayClass7_0.<MaintenanceFailureDoesNotFailPipeline>b__2(Int32 _, Boolean _) in <workspace>/tests/A16.Regression/Program.cs:line 26
+   at Ryujinx.Graphics.Vulkan.PipelineCacheManager.NotifyWorkerPipelineCreated(Int32 index, Boolean allowCheckpoint) in <workspace>/tests/A16.Regression/FakePipelineCacheManager.cs:line 12
+   at Ryujinx.Graphics.Vulkan.BackgroundCompilationScheduler.<>c__DisplayClass10_0.<SchedulePipelineCompile>b__1(Int32 workerIndex) in <workspace>/src/Ryujinx.Graphics.Vulkan/BackgroundCompilationScheduler.cs:line 44
+   at Ryujinx.Graphics.Vulkan.BackgroundCompilationScheduler.WorkerQueue.WorkItem.Execute(Int32 workerIndex) in <workspace>/src/Ryujinx.Graphics.Vulkan/BackgroundCompilationScheduler.cs:line 97
+PASS demand, promotion and checkpoint deferral
+PASS compile errors and later concurrent work
+PASS shutdown and rejection of later work
+PASS quantiles, thresholds, validation and reset
+PASS no per-frame metrics allocation
+7 checks passed. No iPad or GPU performance claim is made.

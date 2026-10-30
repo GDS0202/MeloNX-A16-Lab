@@ -4,7 +4,9 @@ using Ryujinx.Graphics.Vulkan.Effects;
 using Silk.NET.Vulkan;
 using Silk.NET.Vulkan.Extensions.KHR;
 using System;
+using System.Diagnostics;
 using System.Linq;
+using Ryujinx.Common.Logging;
 using VkFormat = Silk.NET.Vulkan.Format;
 
 namespace Ryujinx.Graphics.Vulkan
@@ -44,6 +46,9 @@ namespace Ryujinx.Graphics.Vulkan
         private bool _updateScalingFilter;
         private ScalingFilter _currentScalingFilter;
         private bool _colorSpacePassthroughEnabled;
+        private readonly FrameTimeMetrics _frameTimes = OperatingSystem.IsIOS() ? new() : null;
+        private long _previousPresentTimestamp;
+        private long _frameReportTimestamp;
 
         public unsafe Window(VulkanRenderer gd, SurfaceKHR surface, PhysicalDevice physicalDevice, Device device)
         {
@@ -529,6 +534,36 @@ namespace Ryujinx.Graphics.Vulkan
                 }
 
                 _gd.SwapchainApi.QueuePresent(_gd.Queue, in presentInfo);
+            }
+
+            RecordPresentationInterval();
+        }
+
+        private void RecordPresentationInterval()
+        {
+            if (_frameTimes == null) return;
+            long now = Stopwatch.GetTimestamp();
+            if (_previousPresentTimestamp != 0)
+            {
+                _frameTimes.Add(Stopwatch.GetElapsedTime(_previousPresentTimestamp, now).TotalMilliseconds);
+            }
+            else
+            {
+                _frameReportTimestamp = now;
+            }
+            _previousPresentTimestamp = now;
+            if (Stopwatch.GetElapsedTime(_frameReportTimestamp, now).TotalSeconds >= 10)
+            {
+                Logger.Notice.PrintMsg(LogClass.Gpu,
+                    $"A16Pacing CPU-present: frames={_frameTimes.Count}, " +
+                    $"avgMs={_frameTimes.AverageMilliseconds:F2}, " +
+                    $"p95BucketMs={_frameTimes.PercentileUpperBound(0.95)}, " +
+                    $"p99BucketMs={_frameTimes.PercentileUpperBound(0.99)}, " +
+                    $"maxMs={_frameTimes.MaximumMilliseconds:F2}, " +
+                    $"over50={_frameTimes.Over50Ms}, over100={_frameTimes.Over100Ms}, " +
+                    $"over250={_frameTimes.Over250Ms}.");
+                _frameTimes.Reset();
+                _frameReportTimestamp = now;
             }
         }
 

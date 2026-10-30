@@ -1,0 +1,22 @@
+name: A16 source checks
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.403
+      - run: dotnet build src/Ryujinx.Graphics.Vulkan/Ryujinx.Graphics.Vulkan.csproj -c Release -m:1
+      - run: dotnet run --project tests/A16.Regression/A16.Regression.csproj -c Release
+      - run: python3 -m unittest discover -s a16/tests
+      - run: git diff --check

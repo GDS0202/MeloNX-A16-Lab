@@ -26,7 +26,7 @@ namespace Ryujinx.Graphics.Vulkan
 
             public int PipelineCount;
             public int SavedPipelineCount;
-            public long LastSaveTimestamp;
+            public long LastCheckpointAttemptTimestamp;
             public bool Frozen;
 
             private long _measuredBytes;
@@ -238,7 +238,7 @@ namespace Ryujinx.Graphics.Vulkan
         }
 
 
-        public void NotifyWorkerPipelineCreated(int workerIndex)
+        public void NotifyWorkerPipelineCreated(int workerIndex, bool allowCheckpoint = true)
         {
             if (_disposed)
             {
@@ -249,7 +249,7 @@ namespace Ryujinx.Graphics.Vulkan
 
             state.PipelineCount++;
 
-            Maintain(state, force: false);
+            Maintain(state, force: false, allowCheckpoint: allowCheckpoint);
         }
 
 
@@ -298,7 +298,7 @@ namespace Ryujinx.Graphics.Vulkan
         }
 
 
-        private void Maintain(CacheState state, bool force, bool allowRecycle = true)
+        private void Maintain(CacheState state, bool force, bool allowRecycle = true, bool allowCheckpoint = true)
         {
             if (state.Frozen)
             {
@@ -307,6 +307,13 @@ namespace Ryujinx.Graphics.Vulkan
 
             if (!force)
             {
+                // Defer optional disk I/O under renderer demand, but keep enforcing
+                // the existing memory budget and recycle policy.
+                if (!allowCheckpoint && state.EstimatedBytes < state.Budget)
+                {
+                    return;
+                }
+
                 if (state.EstimatedBytes < state.Budget)
                 {
                     if (string.IsNullOrEmpty(state.Path))
@@ -321,15 +328,12 @@ namespace Ryujinx.Graphics.Vulkan
 
                     long now = Environment.TickCount64;
 
-                    if (state.LastSaveTimestamp != 0 && now - state.LastSaveTimestamp < MinimumSaveIntervalMs)
+                    if (state.LastCheckpointAttemptTimestamp != 0 && now - state.LastCheckpointAttemptTimestamp < MinimumSaveIntervalMs)
                     {
                         return;
                     }
                 }
             }
-
-            state.SavedPipelineCount = state.PipelineCount;
-            state.LastSaveTimestamp = Environment.TickCount64;
 
             long size = GetCacheDataSize(state);
 
@@ -357,7 +361,15 @@ namespace Ryujinx.Graphics.Vulkan
                 return;
             }
 
-            SaveCache(state, size, force);
+            if (force || allowCheckpoint)
+            {
+                // Throttle retries as well as successful periodic checkpoints.
+                state.LastCheckpointAttemptTimestamp = Environment.TickCount64;
+                if (SaveCache(state, size, force))
+                {
+                    state.SavedPipelineCount = state.PipelineCount;
+                }
+            }
         }
 
         private unsafe void Recycle(CacheState state, long size)
@@ -508,11 +520,11 @@ namespace Ryujinx.Graphics.Vulkan
             return (long)dataSize;
         }
 
-        private unsafe void SaveCache(CacheState state, long size, bool final)
+        private unsafe bool SaveCache(CacheState state, long size, bool final)
         {
             if (string.IsNullOrEmpty(state.Path))
             {
-                return;
+                return false;
             }
 
             string temporaryPath = state.Path + ".tmp";
@@ -548,7 +560,7 @@ namespace Ryujinx.Graphics.Vulkan
 
                             Delete(temporaryPath);
 
-                            return;
+                            return false;
                         }
 
                         written = (long)dataSize;
@@ -581,12 +593,16 @@ namespace Ryujinx.Graphics.Vulkan
                 {
                     Logger.Info?.PrintMsg(LogClass.Gpu, message);
                 }
+
+                return true;
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
             {
                 Logger.Warning?.PrintMsg(LogClass.Gpu, $"Failed to persist Vulkan pipeline cache: {exception.Message}");
 
                 Delete(temporaryPath);
+
+                return false;
             }
         }
 
