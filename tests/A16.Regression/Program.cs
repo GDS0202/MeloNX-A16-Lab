@@ -8,7 +8,11 @@ internal static class Program
     private static void Check(bool value, string message) { if (!value) throw new InvalidOperationException(message); }
     private static void Await(Task task) => Check(task.Wait(Timeout), "Worker timed out");
     private static void Wait(ManualResetEventSlim signal) => Check(signal.Wait(Timeout), "Signal timed out");
-    private static void Test(string name, Action action) { action(); Console.WriteLine($"PASS {name}"); _passed++; }
+    private static void Test(string name, Action action)
+    {
+        try { action(); Console.WriteLine($"PASS {name}"); _passed++; }
+        catch (Exception error) { Console.Error.WriteLine($"FAIL {name}: {error}"); throw; }
+    }
 
     private static void CompletionBeforeMaintenance()
     {
@@ -120,6 +124,13 @@ internal static class Program
         Test("pipeline cache identity and truncation", HostChecks.CacheIdentity);
         Test("BC1/2/3 exact color and alpha reference", TextureChecks.PaletteExpansion);
         Test("parallel transcode boundaries and trailing bytes", TextureChecks.ParallelTextureTail);
+        Test("streamed BC2/3/7 mips match full-image reference", TextureChecks.RgbaMipReference);
+        Test("versioned statistics ABI and sanitization", GameplayChecks.StatisticsAbi);
+        Test("converted texture cache identity, ownership and corruption", GameplayChecks.CacheRoundTrip);
+        Test("converted texture disk budget and I/O fallback", GameplayChecks.CacheBudgetAndFailure);
+        Test("native callback retirement and replacement", GameplayChecks.CallbackLifetime);
+        Test("runtime settings validation", GameplayChecks.LiveSettingsValidation);
+        Test("texture recompression OFF and native format preservation", GameplayChecks.RecompressionPolicy);
         Console.WriteLine($"{_passed} checks passed. No iPad or GPU performance claim is made.");
         return 0;
     }

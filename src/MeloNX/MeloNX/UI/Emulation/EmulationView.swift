@@ -19,6 +19,7 @@ struct EmulationView: View {
     private var air = Air.shared
     
     @State var isConnected = false
+    @State private var connectionObserver: UUID?
     
     @ViewBuilder
     func emulationView(_ airplay: Bool = false) -> some View {
@@ -42,7 +43,9 @@ struct EmulationView: View {
                     statisticsHandler.registerPush()
                     
                     self.isConnected = Air.shared.connected
-                    Air.shared.connectionCallbacks.append { self.isConnected = $0 }
+                    if connectionObserver == nil {
+                        connectionObserver = Air.shared.observeConnection { self.isConnected = $0 }
+                    }
                     
                     Air.play(AnyView(emulationView(true)))
                 }
@@ -55,6 +58,20 @@ struct EmulationView: View {
                                 }
                         }
                 }
+        }
+        .overlay {
+            if ryujinxController.isStopping {
+                ProgressView("Stopping game and saving caches…")
+                    .padding(20).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(.black.opacity(0.4))
+            }
+        }
+        .overlay(alignment: .topLeading) { InGameConfigView(titleId: game.titleId) }
+        .onDisappear {
+            statisticsHandler.unregisterPush()
+            if let connectionObserver { Air.shared.removeConnectionObserver(connectionObserver) }
+            connectionObserver = nil
         }
     }
 }

@@ -17,53 +17,34 @@ class LoadingOverlayViewModel: ObservableObject {
     @Published var totalProgress = 1
 
     
+    private var registered = false
     func setupLoading() {
-        let userData = Unmanaged.passRetained(self).toOpaque()
-        
-        RegisterCallback("ProgressWithPTCorShaderCache", { rawPtr, userData in
-            guard let userData else { return }
-            let vm = Unmanaged<LoadingOverlayViewModel>.fromOpaque(userData).takeUnretainedValue()
-            
-            guard let rawPtr else {
-                Task { @MainActor in vm.isShaderOrPTC = false }
-                print("ptr nil")
+        guard !registered else { return }
+        registered = true
+        CallbackManager.register(name: "ProgressWithPTCorShaderCache") { [weak self] callbackData in
+            guard callbackData.len > 0, let ptr = callbackData.ptr,
+                  let array = try? JSONSerialization.jsonObject(with: Data(bytes: ptr, count: Int(callbackData.len))) as? [Any],
+                  array.count == 3, let type = array[0] as? String,
+                  let current = array[1] as? Int, let total = array[2] as? Int else {
+                DispatchQueue.main.async { [weak self] in self?.isShaderOrPTC = false }
                 return
             }
-            
-            let callbackData = rawPtr.load(as: CallbackData.self)
-            
-            guard callbackData.len > 0, let ptr = callbackData.ptr else {
-                Task { @MainActor in vm.isShaderOrPTC = false }
-                print("len no workie")
-                return
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.isShaderOrPTC = current < total - 10
+                self.loadingType = type
+                self.currentProgress = current
+                self.totalProgress = max(1, total)
             }
-            
-            let rawData = Data(bytes: ptr, count: Int(callbackData.len))
-            
-            guard let jsonArray = try? JSONSerialization.jsonObject(with: rawData) as? [Any],
-                  jsonArray.count == 3,
-                  let type = jsonArray[0] as? String,
-                  let current = jsonArray[1] as? Int,
-                  let total = jsonArray[2] as? Int else {
-                print("No JSON")
-                Task { @MainActor in vm.isShaderOrPTC = false }
-                return
-            }
-            
-            Task {
-                await MainActor.run {
-                    if current < total - 10 {
-                        vm.isShaderOrPTC = true
-                        vm.loadingType = type
-                        vm.currentProgress = current
-                        vm.totalProgress = total
-                    } else {
-                        vm.isShaderOrPTC = false
-                    }
-                }
-            }
-        }, userData)
+        }
     }
+
+    func stopLoading() {
+        guard registered else { return }
+        registered = false
+        CallbackManager.unregister(name: "ProgressWithPTCorShaderCache")
+    }
+
 }
 
 struct LoadingOverlayView: View {
@@ -90,6 +71,7 @@ struct LoadingOverlayView: View {
                 }
             }
             .opacity(contentVisible ? 1 : 0)
+            .onDisappear { vm.stopLoading() }
             .onAppear {
                 vm.setupLoading()
                 vm.isAnimating = true

@@ -27,7 +27,7 @@ namespace Ryujinx.Graphics.Vulkan.MoltenVK
 
             // Handled by Environment Variables.
             // config.UseMetalArgumentBuffers = true;
-            config.FastMathEnabled = true;
+            // Preserve the driver's float-control policy; forcing fast math can change shader results.
 
             config.SemaphoreSupportStyle = MVKVkSemaphoreSupportStyle.MVK_CONFIG_VK_SEMAPHORE_SUPPORT_STYLE_SINGLE_QUEUE;
             config.SynchronousQueueSubmits = false;

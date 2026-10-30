@@ -28,6 +28,8 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 using System.Buffers.Binary;
+using Ryujinx.Common.Utilities;
+using Ryujinx.Graphics.Texture;
 // using Ryujinx.Ava.UI.Models;
 
 
@@ -37,7 +39,8 @@ namespace Ryujinx.Library
     {
         protected const int DefaultWidth = 1280;
         protected const int DefaultHeight = 720;
-        private const int TargetFps = 60;
+        // Telemetry cadence only: this never changes emulation or presentation FPS.
+        private const int StatisticsUpdatesPerSecond = 2;
 
         private static readonly ConcurrentQueue<Action> _mainThreadActions = new();
 
@@ -84,8 +87,12 @@ namespace Ryujinx.Library
 
 
         private long _ticks;
-        public bool _isActive;
-        private bool _isStopped;
+        public volatile bool _isActive;
+        private volatile bool _isStopped;
+        private int _exitRequested;
+        private int _disposed;
+        private Thread _renderLoopThread;
+        private LiveGraphicsSettings _pendingGraphics;
 
         public bool _ranFirstFrame;
 
@@ -110,7 +117,7 @@ namespace Ryujinx.Library
             _keyboardInterface = (IKeyboard)_inputManager.KeyboardDriver.GetGamepad("0");
             _glLogLevel = glLogLevel;
             _chrono = new Stopwatch();
-            _ticksPerFrame = Stopwatch.Frequency / TargetFps;
+            _ticksPerFrame = Stopwatch.Frequency / StatisticsUpdatesPerSecond;
             _gpuCancellationTokenSource = new CancellationTokenSource();
             _exitEvent = new ManualResetEvent(false);
             _gpuDoneEvent = new ManualResetEvent(false);
@@ -127,7 +134,9 @@ namespace Ryujinx.Library
 
         private void SignalInputUpdated()
         {
-            _inputUpdatedEvent.Set();
+            if (Volatile.Read(ref _disposed) != 0) return;
+            try { _inputUpdatedEvent.Set(); }
+            catch (ObjectDisposedException) { } // A publisher may already have copied the event delegate.
         }
 
         public void Initialize(Switch device, List<InputConfig> inputConfigs, bool enableKeyboard, bool enableMouse)
@@ -208,6 +217,8 @@ namespace Ryujinx.Library
             Device.Gpu.Renderer.RunLoop(() =>
             {
                 Device.Gpu.SetGpuThread();
+                try
+                {
                 Device.Gpu.InitializeShaderCache(_gpuCancellationTokenSource.Token);
 
                 while (_isActive)
@@ -218,6 +229,8 @@ namespace Ryujinx.Library
                     }
 
                     _pauseEvent.WaitOne();
+                    if (_isStopped) break;
+                    ApplyPendingGraphics();
 
                     _ticks += _chrono.ElapsedTicks;
 
@@ -261,42 +274,62 @@ namespace Ryujinx.Library
                             $"GPU: {_gpuDriverName}"));
                         */
                         
-                        _ticks = Math.Min(_ticks - _ticksPerFrame, _ticksPerFrame);
+                        _ticks = 0; // No catch-up bursts of UI callbacks after a pause or a slow frame.
                     }
                 }
 
-                if (Device.Gpu.Renderer is ThreadedRenderer threaded)
-                {
-                    threaded.FlushThreadedCommands();
                 }
-
-                _gpuDoneEvent.Set();
+                catch (OperationCanceledException) when (_isStopped) { }
+                finally
+                {
+                    try
+                    {
+                        if (Device.Gpu.Renderer is ThreadedRenderer threaded) threaded.FlushThreadedCommands();
+                    }
+                    finally { _gpuDoneEvent.Set(); }
+                }
             });
 
             FinalizeWindowRenderer();
         }
 
+        public bool QueueGraphicsSettings(LiveGraphicsSettings settings)
+        {
+            if (_isStopped || settings == null) return false;
+            Interlocked.Exchange(ref _pendingGraphics, settings);
+            return true;
+        }
+
+        private void ApplyPendingGraphics()
+        {
+            LiveGraphicsSettings settings = Interlocked.Exchange(ref _pendingGraphics, null);
+            if (settings == null) return;
+            GraphicsConfig.ResScale = settings.Scale;
+            GraphicsConfig.MaxAnisotropy = settings.Anisotropy;
+            GraphicsConfig.EnableAsyncShaderCompilation = settings.AsyncShaders;
+            Device.Configuration.AspectRatio = settings.AspectRatio;
+            _aspectRatio = settings.AspectRatio;
+            Device.SetVolume(settings.Volume);
+            // ThreadedWindow setters are no-ops in this fork. Queue one action on the
+            // backend using the renderer's existing synchronous command mechanism.
+            Device.Gpu.Renderer.BackgroundContextAction(() =>
+            {
+                Renderer.Window.SetAntiAliasing(settings.AntiAliasing);
+                Renderer.Window.SetScalingFilter(settings.Filter);
+                Renderer.Window.SetScalingFilterLevel(settings.FilterLevel);
+                Renderer.Window.SetMetalFxUpscaleFactor(settings.MetalFxScale);
+            });
+        }
+
         public void Exit()
         {
-            TouchScreenManager?.Dispose();
-            NpadManager?.Dispose();
-            Device.Dispose();
-
-            if (_isStopped)
-            {
-                return;
-            }
-
-            _gpuCancellationTokenSource.Cancel();
-
+            if (Interlocked.Exchange(ref _exitRequested, 1) != 0) return;
             _isStopped = true;
             _isActive = false;
+            _gpuCancellationTokenSource.Cancel();
+            _pauseEvent.Set();
             _inputUpdatedEvent.Set();
-
-            _exitEvent.WaitOne();
-            _exitEvent.Dispose();
-
-            NativeGamepadDriver.OnInputUpdated -= SignalInputUpdated;
+            // Signal only. Execute/ExecutionEntrypoint own all resource disposal after draining GPU work.
         }
 
         public static void ProcessMainThreadQueue()
@@ -309,13 +342,15 @@ namespace Ryujinx.Library
 
         public void MainLoop()
         {
-            while (_isActive)
+            while (_isActive && !_isStopped)
             {
                 UpdateFrame();
 
                 ProcessMainThreadQueue();
 
-                _inputUpdatedEvent.WaitOne(1);
+                // Controller events still wake immediately. On A16, fallback polling at 250 Hz
+                // leaves CPU time for emulation instead of scanning HID 1000 times/s.
+                _inputUpdatedEvent.WaitOne(HostPerformance.IsA16 ? 4 : 1);
             }
 
             _exitEvent.Set();
@@ -360,17 +395,15 @@ namespace Ryujinx.Library
 
             InitializeWindow();
 
-            Thread renderLoopThread = new(Render)
+            _renderLoopThread = new Thread(Render)
             {
                 Name = "GUI.RenderLoop",
             };
-            renderLoopThread.Start();
+            _renderLoopThread.Start();
 
             MainLoop();
 
             _gpuDoneEvent.WaitOne();
-            _gpuDoneEvent.Dispose();
-
             Exit();
         }
 
@@ -398,19 +431,14 @@ namespace Ryujinx.Library
 
         public void SendStatistics(bool before = true)
         {
-            static double Sanitize(double v) =>
-                double.IsFinite(v) ? Math.Round(v, 2) : 0.0;
-
-            Span<byte> bytes = stackalloc byte[33];
-
-            double fps = before ? Sanitize(Device.Statistics.GetGameFrameRate()) : 0d;
-            double frameTime = before ? Sanitize(Device.Statistics.GetGameFrameTime()) : 0d;
-            double fifo = before ? Sanitize(Device.Statistics.GetFifoPercent())   : 0d;
-
-            BinaryPrimitives.WriteDoubleLittleEndian(bytes[0..],  fps);
-            BinaryPrimitives.WriteDoubleLittleEndian(bytes[8..],  frameTime);
-            bytes[16] = (byte)(_ranFirstFrame ? 1 : 0);
-            BinaryPrimitives.WriteDoubleLittleEndian(bytes[17..], fifo);
+            Span<byte> bytes = stackalloc byte[StatisticsPacket.Size];
+            StatisticsPacket.Write(bytes,
+                before ? Device.Statistics.GetGameFrameRate() : 0,
+                before ? Device.Statistics.GetGameFrameTime() : 0,
+                _ranFirstFrame,
+                before ? Device.Statistics.GetFifoPercent() : 0,
+                PresentationStatistics.Latest, TranscodeDiskCache.TotalHits,
+                HostPerformance.ThermalState, HostPerformance.LowPowerMode);
 
             unsafe {
                 fixed (byte* ptr = bytes)
@@ -518,11 +546,19 @@ namespace Ryujinx.Library
         {
             if (disposing)
             {
+                if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
                 _isActive = false;
                 _inputUpdatedEvent.Set();
+                // DisposeGpu has already stopped the backend loop at this point.
+                if (_renderLoopThread != null && _renderLoopThread != Thread.CurrentThread) _renderLoopThread.Join();
                 NativeGamepadDriver.OnInputUpdated -= SignalInputUpdated;
                 TouchScreenManager?.Dispose();
-                NpadManager.Dispose();
+                NpadManager?.Dispose();
+                _pauseEvent.Dispose();
+                _inputUpdatedEvent.Dispose();
+                _gpuDoneEvent.Dispose();
+                _exitEvent.Dispose();
+                _gpuCancellationTokenSource.Dispose();
             }
         }
 

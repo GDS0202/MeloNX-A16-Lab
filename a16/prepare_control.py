@@ -16,6 +16,7 @@ app = root / "src/MeloNX/MeloNX/Common/HostRuntime.swift"
 text = app.read_text()
 setting = 'let policyEnabled = UserDefaults.standard.object(forKey: "a16WorkloadPolicyEnabled") as? Bool ?? true'
 assert text.count(setting) == 1, "A16 policy bootstrap changed; update the control preparation"
+text = text.replace('let textureCacheEnabled = UserDefaults.standard.object(forKey: "a16TextureDiskCacheEnabled") as? Bool ?? true', 'let textureCacheEnabled = false // Control baseline: converted texture cache disabled.')
 app.write_text(text.replace(setting, 'let policyEnabled = false // Control baseline: host workload policy disabled.'))
 path = root / "src/MeloNX/MeloNX/Info.plist"
 with path.open("rb") as stream: info = plistlib.load(stream)

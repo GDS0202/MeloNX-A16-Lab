@@ -51,6 +51,8 @@ namespace Ryujinx.Graphics.Vulkan
         private readonly FrameTimeMetrics _frameTimes = OperatingSystem.IsIOS() ? new() : null;
         private long _previousPresentTimestamp;
         private long _frameReportTimestamp;
+        private long _hudReportTimestamp;
+        private readonly FrameTimeMetrics _hudFrameTimes = OperatingSystem.IsIOS() ? new() : null;
 
         public unsafe Window(VulkanRenderer gd, SurfaceKHR surface, PhysicalDevice physicalDevice, Device device)
         {
@@ -552,13 +554,23 @@ namespace Ryujinx.Graphics.Vulkan
             long now = Stopwatch.GetTimestamp();
             if (_previousPresentTimestamp != 0)
             {
-                _frameTimes.Add(Stopwatch.GetElapsedTime(_previousPresentTimestamp, now).TotalMilliseconds);
+                double interval = Stopwatch.GetElapsedTime(_previousPresentTimestamp, now).TotalMilliseconds;
+                _frameTimes.Add(interval);
+                _hudFrameTimes.Add(interval);
             }
             else
             {
                 _frameReportTimestamp = now;
+                _hudReportTimestamp = now;
             }
             _previousPresentTimestamp = now;
+            if (Stopwatch.GetElapsedTime(_hudReportTimestamp, now).TotalSeconds >= 1)
+            {
+                PresentationStatistics.Publish(new(_hudFrameTimes.Count, _hudFrameTimes.PercentileUpperBound(.95),
+                    _hudFrameTimes.PercentileUpperBound(.99), _hudFrameTimes.MaximumMilliseconds, _hudFrameTimes.Over100Ms));
+                _hudFrameTimes.Reset();
+                _hudReportTimestamp = now;
+            }
             if (Stopwatch.GetElapsedTime(_frameReportTimestamp, now).TotalSeconds >= 10)
             {
                 Logger.Notice.PrintMsg(LogClass.Gpu,

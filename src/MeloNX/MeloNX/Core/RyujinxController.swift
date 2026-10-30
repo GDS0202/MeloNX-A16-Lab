@@ -123,6 +123,7 @@ public final class RyujinxController: ObservableObject {
     private init() {}
     
     @Published public var isRunning: RunningState = .stopped
+    @Published private(set) var isStopping = false
     @Published public var games: [GameInfo] = []
     @Published var settings: Options = .init(inputPath: "")
     
@@ -144,6 +145,7 @@ public final class RyujinxController: ObservableObject {
             self.objectWillChange.send()
             if case .started(let game, _) = isRunning, perSettings[game.titleId]  != nil {
                 perSettings[game.titleId] = newValue
+                return
             }
             
             settings = newValue
@@ -204,6 +206,7 @@ public final class RyujinxController: ObservableObject {
         guard !emulationThreadActive, !isRunning.hasStarted() else { return }
         
         loadConfig()
+        flushPendingSettingsSaves()
         
         if !hasIncreasedMemoryLimitEntitlement {
             isRunning = .started(game: game, state: .entitlement)
@@ -231,9 +234,7 @@ public final class RyujinxController: ObservableObject {
         
         controllerManager.attachAllControllers()
         
-        if NativeSettingsManager.exists(game.titleId) {
-            NativeSettingsManager.setShared(game.titleId, pullOriginal: true)
-        }
+        NativeSettingsManager.setShared(game.titleId, pullOriginal: true)
         
         loadWithoutSave(game.titleId)
         
@@ -250,6 +251,7 @@ public final class RyujinxController: ObservableObject {
         _isPaused = false
         wasManuallyPaused = false
         emulationThreadActive = true
+        isStopping = false
         
         let nativeSettingsManager = NativeSettingsManager.shared
         
@@ -269,7 +271,14 @@ public final class RyujinxController: ObservableObject {
             
             DispatchQueue.main.async {
                 self.emulationThreadActive = false
-                
+                self.isStopping = false
+                self._isPaused = false
+                self.wasManuallyPaused = false
+                Ryujinx.emulationView = nil
+                Air.stop()
+                NativeSettingsManager.setShared()
+                UIApplication.shared.isIdleTimerDisabled = false
+
                 if response != 0 {
                     self.isRunning = .crashed(result: "Code: \(response)")
                 } else {
@@ -280,6 +289,24 @@ public final class RyujinxController: ObservableObject {
     }
     
     
+    func returnToLibrary() {
+        guard emulationThreadActive, !isStopping else { return }
+        flushPendingSettingsSaves()
+        isStopping = true
+        wasManuallyPaused = false
+        isPaused = false
+        // The core only requests shutdown. Keep CAMetalLayer alive until mainRyu returns.
+        DispatchQueue.global(qos: .userInitiated).async { Ryujinx.stopEmulation() }
+    }
+
+    @discardableResult
+    func applyCurrentGraphicsIfRunning(titleId: String? = nil) -> Bool {
+        guard emulationThreadActive, !isStopping,
+              case .started(let game, _) = isRunning,
+              titleId == nil || titleId == game.titleId else { return false }
+        return Ryujinx.applyRuntimeGraphics(currentSettings)
+    }
+
     func redirectStdIOToFile() {
         let fileManager = FileManager.default
         
@@ -387,7 +414,10 @@ public final class RyujinxController: ObservableObject {
         }
         
         do {
-            perSettings[titleId] = try Options.loadFromJSON(at: url)
+            let global = try JSONEncoder().encode(settings)
+            let saved = try Data(contentsOf: url)
+            let resolved = try SettingsOverlay.resolve(global: global, game: saved)
+            perSettings[titleId] = try JSONDecoder().decode(Options.self, from: resolved)
         } catch {
             let backupURL = backupInvalidConfig(at: url)
             
@@ -422,7 +452,10 @@ public final class RyujinxController: ObservableObject {
         guard let gameSettings = perSettings[titleId] else { return }
         
         do {
-            try gameSettings.saveAsJSON(to: .perGameConfigURL(titleId))
+            let encoded = try SettingsOverlay.encode(global: JSONEncoder().encode(settings),
+                                                     effective: JSONEncoder().encode(gameSettings))
+            try FileManager.default.createDirectory(at: URL.configFolderURL, withIntermediateDirectories: true)
+            try encoded.write(to: .perGameConfigURL(titleId), options: .atomic)
         } catch {
             showSettingsError(title: "Failed to Save Game Settings", error: error)
         }

@@ -49,6 +49,15 @@ final class Ryujinx {
     static func stopEmulation() {
         MeloNX.stop_emulation()
     }
+
+    @discardableResult
+    static func applyRuntimeGraphics(_ settings: Options) -> Bool {
+        apply_runtime_graphics(settings.resScale, settings.maxAnisotropy,
+            Int32(settings.antiAliasing.rawValue), Int32(settings.scalingFilter.rawValue),
+            Int32(settings.scalingFilterLevel), settings.metalFxUpscaleFactor,
+            Int32(settings.aspectRatio.rawValue), settings.audioVolume,
+            settings.enableAsyncShaderCompilation ? 1 : 0) != 0
+    }
     
     static func mainRyu(_ native: Options) -> Int {
         return Int(MeloNX.main_ryujinx_sdl(native.toNative()))

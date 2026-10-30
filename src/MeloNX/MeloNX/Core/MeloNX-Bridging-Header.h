@@ -72,6 +72,9 @@ uint64_t execute_function_pointer(void* functionPtr);
 
 void report_memory_pressure(uint8_t critical);
 void report_host_state(uint8_t thermalState, uint8_t lowPowerMode);
+uint8_t apply_runtime_graphics(float scale, float anisotropy, int32_t antiAliasing,
+    int32_t filter, int32_t filterLevel, float metalFxScale, int32_t aspectRatio,
+    float volume, uint8_t asyncShaders);
 
 void offer_donated_memory(void* baseAddress, uint64_t size);
 

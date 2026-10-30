@@ -1,13 +1,16 @@
-# MeloNX A16 Lab — experimental fork 0.2
+# MeloNX A16 Lab — experimental fork 0.3
 
-Based on official MeloNX 2.7. A16 thermal-aware CPU work, portable SIMD texture
-expansion, reduced descriptor allocations, JIT stability and pipeline-cache fixes.
-Explicit per-game 1× preset and CPU presentation interval diagnostics.
-iOS compilation and device performance remain unverified. No IPA generated.
+Based on MeloNX 2.7. A16 workload policy, pipeline-cache fixes and experimental
+converted-texture disk reuse. Persistent iPad game menu, safe shutdown, explicit
+runtime graphics settings and low-overhead frame-interval statistics.
 
-**[Audit tecnico e decisioni](a16/AUDIT_2026-10-30_IT.md)**
+The previous IPA booted BOTW but the user reported purple artifacts and stutters.
+0.3 adds tested correctness fixes and separate texture/shader compatibility tests;
+it is not yet validated on the iPad. No guaranteed FPS or stutter elimination.
 
-**[Stato del progetto e istruzioni](a16/README_IT.md)**
+**[Gameplay audit, primary sources and limitations](a16/AUDIT_03_GAMEPLAY_IT.md)**
+
+**[Project status and test instructions](a16/README_IT.md)**
 
 Upstream README and attribution follow.
 

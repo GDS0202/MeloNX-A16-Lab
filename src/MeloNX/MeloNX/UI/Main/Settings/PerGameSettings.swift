@@ -29,11 +29,12 @@ struct PerGameSettingsView: View {
     @State private var showOSIcon = true
     @State private var showingAppIconSwitcher = false
     @AppStorage("a16WorkloadPolicyEnabled") private var a16WorkloadPolicyEnabled = true
+    @AppStorage("a16TextureDiskCacheEnabled") private var textureDiskCacheEnabled = true
     @FocusState private var isArgumentsKeyboardVisible: Bool
     
     private var config: Binding<Options> {
         Binding(
-            get: { ryujinxController.perSettings[titleId] ?? .init(inputPath: "") },
+            get: { ryujinxController.perSettings[titleId] ?? ryujinxController.settings },
             set: {
                 ryujinxController.perSettings[titleId] = $0
                 ryujinxController.schedulePerGameConfigSave(titleId)
@@ -138,10 +139,13 @@ struct PerGameSettingsView: View {
     var body: some View {
         iOSSettings
             .onAppear() {
+                ryujinxController.flushPendingSettingsSaves()
+                ryujinxController.loadConfig()
                 ryujinxController.loadPerGameConfig(titleId)
             }
             .onDisappear {
                 ryujinxController.savePerGameConfig(titleId)
+                ryujinxController.applyCurrentGraphicsIfRunning(titleId: titleId)
             }
     }
     
@@ -233,6 +237,10 @@ struct PerGameSettingsView: View {
     var graphicsForm: some View {
         Form {
             Section {
+                Text(ryujinxController.perSettings[titleId] == nil ? "Using global settings" : "This game has overrides")
+                    .font(.footnote).foregroundStyle(.secondary)
+                Text("Resolution, filtering, aspect ratio, volume and async shaders apply when play resumes. CPU, memory, texture format and other changes require restarting the game. The texture test disables recompression and can use more RAM. The shader test disables async compilation and can pause while new shaders compile.")
+                    .font(.footnote).foregroundStyle(.secondary)
                 Button {
                     var options = config.wrappedValue
                     options.resScale = 1.0
@@ -257,9 +265,33 @@ struct PerGameSettingsView: View {
                 } label: {
                     Label("Apply A16 Performance – 1×", systemImage: "speedometer")
                 }
+                Button("Texture compatibility test — 1×") {
+                    var options = config.wrappedValue
+                    options.resScale = 1
+                    options.disableDockedMode = true
+                    options.enableTextureRecompression = false
+                    options.antiAliasing = .none
+                    config.wrappedValue = options
+                    ryujinxController.savePerGameConfig(titleId)
+                }
+                Button("Shader correctness test — 1×") {
+                    var options = config.wrappedValue
+                    options.resScale = 1
+                    options.disableDockedMode = true
+                    options.enableAsyncShaderCompilation = false
+                    config.wrappedValue = options
+                    ryujinxController.savePerGameConfig(titleId)
+                }
+                Button("Use global settings for this game") {
+                    if ryujinxController.removePerGameConfig(titleId) {
+                        nativeSettingsManager.reset()
+                        ryujinxController.applyCurrentGraphicsIfRunning(titleId: titleId)
+                    }
+                }
                 Toggle("A16 CPU workload control", isOn: $a16WorkloadPolicyEnabled)
+                Toggle("Reuse converted textures on disk", isOn: $textureDiskCacheEnabled)
             } footer: {
-                Text("The preset applies to this game: handheld 1×, shader cache, experimental async compilation and lightweight filtering. Game-controlled dynamic resolution is independent. Async compilation may temporarily omit new effects. CPU workload control applies to all games on a detected A16 and requires restarting the app; it adapts texture conversion and compiler priority without changing resolution.")
+                Text("The preset applies to this game: handheld 1×, shader cache, experimental async compilation and lightweight filtering. Game-controlled dynamic resolution is independent. Async compilation may temporarily omit new effects. CPU workload control and the converted texture disk cache apply to all games on a detected A16 and require restarting the app; it adapts texture conversion and compiler priority without changing resolution.")
             }
 
             // Resolution Scale
@@ -615,9 +647,8 @@ struct PerGameSettingsView: View {
                                 isOn: nativeSettingsManager.disableTouch.projectedValue,
                                 info: "Disables the touch screen (not the virtual controller).")
  
-                NativeToggleRow("Menu Button (in-game)", icon: "arrow.left.circle",
-                                isOn: nativeSettingsManager.showScreenShotButton(true).projectedValue,
-                                info: "Shows an in-game menu button to exit, lock orientation (iPhone only), change aspect ratio, or change controllers.")
+                Label("The game menu is always available in the upper-left corner.", systemImage: "line.3.horizontal.circle")
+                    .font(.footnote).foregroundStyle(.secondary)
                 
             }
         }

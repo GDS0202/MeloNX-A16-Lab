@@ -1,0 +1,31 @@
+PASS pipeline completion precedes maintenance
+PASS maintenance failure does not fail pipeline
+00:00:00.025 |W| Vulkan Pipeline Compile 0 Gpu : Background compilation maintenance failed: System.IO.IOException: Injected cache I/O failure
+   at Program.<>c__DisplayClass7_0.<MaintenanceFailureDoesNotFailPipeline>b__2(Int32 _, Boolean _) in /workspace/scratch/ef29500c2c1b/melonx-a16/tests/A16.Regression/Program.cs:line 30
+   at Ryujinx.Graphics.Vulkan.PipelineCacheManager.NotifyWorkerPipelineCreated(Int32 index, Boolean allowCheckpoint) in /workspace/scratch/ef29500c2c1b/melonx-a16/tests/A16.Regression/FakePipelineCacheManager.cs:line 12
+   at Ryujinx.Graphics.Vulkan.BackgroundCompilationScheduler.<>c__DisplayClass11_0.<SchedulePipelineCompile>b__1(Int32 workerIndex) in /workspace/scratch/ef29500c2c1b/melonx-a16/src/Ryujinx.Graphics.Vulkan/BackgroundCompilationScheduler.cs:line 48
+   at Ryujinx.Graphics.Vulkan.BackgroundCompilationScheduler.WorkerQueue.WorkItem.Execute(Int32 workerIndex) in /workspace/scratch/ef29500c2c1b/melonx-a16/src/Ryujinx.Graphics.Vulkan/BackgroundCompilationScheduler.cs:line 108
+PASS demand, promotion and checkpoint deferral
+PASS compile errors and later concurrent work
+PASS shutdown and rejection of later work
+PASS quantiles, thresholds, validation and reset
+PASS no per-frame metrics allocation
+PASS JIT exception cleanup and concurrent interval operations
+PASS critical pressure bypasses warning cooldown
+PASS A16 thermal/power policy and recovery
+PASS pipeline cache identity and truncation
+Texture backend: AVX2=True, Vector128=True
+PASS BC1/2/3 exact color and alpha reference
+PASS parallel transcode boundaries and trailing bytes
+PASS streamed BC2/3/7 mips match full-image reference
+PASS versioned statistics ABI and sanitization
+PASS converted texture cache identity, ownership and corruption
+PASS converted texture disk budget and I/O fallback
+PASS native callback retirement and replacement
+PASS runtime settings validation
+PASS texture recompression OFF and native format preservation
+20 checks passed. No iPad or GPU performance claim is made.
+
+Python archive verification: 6 checks passed.
+Swift/iOS compile: see source-check CI for this commit.
+No iPad benchmark or visual correctness claim.

@@ -1,48 +1,31 @@
-//
-//  StatisticsHandler.swift
-//  MeloNX
-//
-//  Created by Stossy11 on 26/5/2026.
-//
-
 import SwiftUI
 import Foundation
-import Combine
 
-private struct StatisticsRequest: Codable {
-    let FPS: Double
-    let FrameTime: Double
-    let Started: Bool
-    let FIFO: Double
-}
+@MainActor
+final class StatisticsHandler: ObservableObject {
+    @Published private(set) var sample = EmulationStatistics()
+    private var registered = false
+    var fps: Double { sample.fps }
+    var frameTime: Double { sample.frameTime }
+    var started: Bool { sample.started }
+    var fifo: Double { sample.fifo }
 
-class StatisticsHandler: ObservableObject {
-    @Published var fps: Double = 0
-    @Published var frameTime: Double = 0
-    @Published var started: Bool = false
-    @Published var fifo: Double = 0
-    
     func registerPush() {
-        CallbackManager.register(name: "push_statistics") { data in
-            guard let ptr = data.ptr, data.len >= 33 else { return }
-            
-            let fps = ptr.load(fromByteOffset: 0, as: Double.self)
-            let frameTime = ptr.load(fromByteOffset: 8, as: Double.self)
-            let started = ptr.load(fromByteOffset: 16, as: UInt8.self) != 0
-            let fifo = ptr.load(fromByteOffset: 17, as: Double.self)
-            
-            Task {
-                await MainActor.run {
-                    self.fps       = fps
-                    self.frameTime = frameTime
-                    self.started   = started
-                    self.fifo      = fifo
-                }
-            }
+        guard !registered else { return }
+        registered = true
+        CallbackManager.register(name: "push_statistics") { [weak self] data in
+            guard let pointer = data.ptr,
+                  let decoded = EmulationStatistics.decode(UnsafeRawPointer(pointer), length: Int(data.len)) else { return }
+            // Copy values while the native stack packet is alive, publish once on the main actor.
+            DispatchQueue.main.async { [weak self] in self?.sample = decoded }
         }
     }
-    
-    func formatFPS() -> String {
-        String(format: "FPS: %.2f", fps)
+
+    func unregisterPush() {
+        guard registered else { return }
+        registered = false
+        CallbackManager.unregister(name: "push_statistics")
     }
+
+    func formatFPS() -> String { String(format: "FPS: %.1f", fps) }
 }

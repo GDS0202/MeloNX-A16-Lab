@@ -23,10 +23,18 @@ public class Air {
     public private(set) var connected = false {
         didSet {
             guard oldValue != connected else { return }
-            connectionCallbacks.forEach { $0(connected) }
+            connectionCallbacks.values.forEach { $0(connected) }
         }
     }
-    var connectionCallbacks: [(Bool) -> Void] = []
+    private var connectionCallbacks: [UUID: (Bool) -> Void] = [:]
+
+    func observeConnection(_ callback: @escaping (Bool) -> Void) -> UUID {
+        let id = UUID()
+        connectionCallbacks[id] = callback
+        return id
+    }
+
+    func removeConnectionObserver(_ id: UUID) { connectionCallbacks.removeValue(forKey: id) }
     private(set) var airWindow: UIWindow?
     var airScreen: UIScreen? { airWindow?.windowScene?.screen }
     private var hostingController: UIHostingController<AnyView>?
@@ -77,6 +85,6 @@ public class Air {
     }
     
     public static func connection(_ callback: @escaping (Bool) -> Void) {
-        Air.shared.connectionCallbacks.append(callback)
+        _ = Air.shared.observeConnection(callback)
     }
 }

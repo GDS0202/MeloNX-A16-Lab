@@ -83,4 +83,29 @@ internal static class TextureChecks
         }
         if (!input.AsSpan(input.Length - 3).SequenceEqual(whole.Span[^3..])) throw new Exception("Texture tail corrupted");
     }
+    public static void RgbaMipReference()
+    {
+        // Full-image decode + encode is independent of the streaming block traversal.
+        foreach (int format in new[] { 2, 3, 7 })
+        foreach (var shape in new[] { (1, 1, 1, 1, 1), (7, 5, 1, 3, 2), (17, 9, 2, 5, 1), (65, 65, 1, 1, 1) })
+        {
+            var (w, h, d, levels, layers) = shape;
+            int length = 0;
+            for (int l = 0; l < levels; l++) length += ((Math.Max(1, w >> l) + 3) / 4) * ((Math.Max(1, h >> l) + 3) / 4) * Math.Max(1, d >> l) * layers * 16;
+            byte[] input = new byte[length]; new Random(1600 + format + w).NextBytes(input);
+            using var decoded = format switch {
+                2 => BCnDecoder.DecodeBC2(input, w, h, d, levels, layers),
+                3 => BCnDecoder.DecodeBC3(input, w, h, d, levels, layers),
+                _ => BCnDecoder.DecodeBC7(input, w, h, d, levels, layers),
+            };
+            using var reference = ETC2Encoder.EncodeRgba(decoded.Memory, w, h, d, levels, layers);
+            using var actual = format switch {
+                2 => ETC2Transcoder.TranscodeBC2ToEtc2Rgba(input, w, h, d, levels, layers),
+                3 => ETC2Transcoder.TranscodeBC3ToEtc2Rgba(input, w, h, d, levels, layers),
+                _ => ETC2Transcoder.TranscodeBC7ToEtc2Rgba(input, w, h, d, levels, layers),
+            };
+            if (!actual.Span.SequenceEqual(reference.Span)) throw new Exception($"BC{format} ETC2 mismatch: {shape}");
+        }
+    }
+
 }

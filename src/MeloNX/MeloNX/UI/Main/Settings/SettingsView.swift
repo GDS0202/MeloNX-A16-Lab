@@ -179,7 +179,10 @@ struct SettingsView: View {
             }
         }
         .onAppear { resolveConfiguredNetworkInterface() }
-        .onDisappear { ryujinxController.saveConfig() }
+        .onDisappear {
+            ryujinxController.saveConfig()
+            ryujinxController.applyCurrentGraphicsIfRunning()
+        }
     }
     
     // MARK: - iPhone
@@ -1037,9 +1040,8 @@ struct SettingsView: View {
                 }
                 
                 
-                NativeToggleRow("Menu Button (in-game)", icon: "arrow.left.circle",
-                                isOn: nativeSettingsManager.showScreenShotButton(true).projectedValue,
-                                info: "Shows an in-game menu button to exit, lock orientation (iPhone only), change aspect ratio, or change controllers.")
+                Label("The game menu is always available in the upper-left corner.", systemImage: "line.3.horizontal.circle")
+                    .font(.footnote).foregroundStyle(.secondary)
                 NativeToggleRow("Keep App in Background", icon: "location.viewfinder",
                                 isOn: nativeSettingsManager.setting(forKey: "location-enabled", default: false).projectedValue,
                                 info: "Uses Location to keep the app in the background. Does NOT track or store any data.")

@@ -9,19 +9,22 @@ import SwiftUI
 import MetalKit
 
 class MetalView: MTKView {
-    @ObservedObject var menuViewShower: InGameConfigView_MenuView = .shared
     private var activeTouches: [UITouch] = []
     private var ignoredTouches: Set<UITouch> = []
 
-    private var aspectRatio: AspectRatio = .fixed16x9
+    private var reportedBounds: CGRect = .null
+    private var reportedTargetFps: Int = 0
 
     func setAspectRatio() {
-        self.aspectRatio = RyujinxController.shared.currentSettings.aspectRatio
-        Ryujinx.setViewSize(self.bounds)
-        updateUnboundedPresentTargetFps()
+        guard bounds.width > 0, bounds.height > 0, bounds != reportedBounds else { return }
+        reportedBounds = bounds
+        Ryujinx.setViewSize(bounds)
     }
 
     private func updateUnboundedPresentTargetFps() {
+        let fps = window?.screen.maximumFramesPerSecond ?? 60
+        guard fps != reportedTargetFps else { return }
+        reportedTargetFps = fps
         Ryujinx.setUnboundedPresentTargetFps(for: window?.screen)
     }
 
@@ -32,6 +35,7 @@ class MetalView: MTKView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
+        setAspectRatio()
         updateUnboundedPresentTargetFps()
     }
     
@@ -46,10 +50,6 @@ class MetalView: MTKView {
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesBegan(touches, with: event)
         
-        Task.detached {
-            await self.menuViewShower.triggerButton()
-        }
-        
         let disabled = UserDefaults.standard.bool(forKey: "disableTouch")
         guard !disabled else { return }
         
@@ -59,7 +59,6 @@ class MetalView: MTKView {
             let location = touch.location(in: self)
             let index = getNextAvailableIndex()
             activeTouches.append(touch)
-            print("Touch location: \(location)")
             let transformed = transformToTargetCoordinates(location)
             Ryujinx.touchBegan(transformed, index: index)
         }
@@ -97,10 +96,6 @@ class MetalView: MTKView {
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesMoved(touches, with: event)
-        
-        Task.detached {
-            await self.menuViewShower.triggerButton()
-        }
         
         let disabled = UserDefaults.standard.bool(forKey: "disableTouch")
         guard !disabled else { return }
@@ -171,7 +166,7 @@ struct MetalViewRepresentable: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: UIView, context: Context) {
-        
+        (uiView as? MetalView)?.setAspectRatio()
     }
     
     @discardableResult

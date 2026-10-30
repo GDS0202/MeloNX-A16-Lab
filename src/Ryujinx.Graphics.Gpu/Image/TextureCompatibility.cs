@@ -191,7 +191,7 @@ namespace Ryujinx.Graphics.Gpu.Image
 
         private static bool CanTranscodeBcToEtc2(Target target, Capabilities caps)
         {
-            return caps.SupportsEtc2Compression && SupportsEtc2Target(target);
+            return IsRecompressionEnabled && caps.SupportsEtc2Compression && SupportsEtc2Target(target);
         }
 
         private static bool SupportsEtc2Target(Target target)

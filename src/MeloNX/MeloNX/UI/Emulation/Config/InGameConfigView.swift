@@ -9,24 +9,11 @@ import SwiftUI
 import Melo_Controller
 import Combine
 
+@MainActor
 class InGameConfigView_MenuView: ObservableObject {
-    @Published var hideTask: Task<Void, Never>? = nil
-    @Published var showButton: Bool = false
-    
-    static var shared: InGameConfigView_MenuView = .init()
-    
-    func triggerButton() {
-        hideTask?.cancel()
-        
-        showButton = true
-        
-        hideTask = Task {
-            try? await Task.sleep(nanoseconds: 5_000_000_000) // 5 seconds
-            if !Task.isCancelled {
-                showButton = false
-            }
-        }
-    }
+    @Published var showButton = true
+    static let shared = InGameConfigView_MenuView()
+    func triggerButton() { if !showButton { showButton = true } }
 }
 
 struct InGameConfigView: View {
@@ -36,6 +23,9 @@ struct InGameConfigView: View {
     @State var rotationlock: Bool = false
     @State var showingKeyboardConfig: Bool = false
     @State var showControllerSettings: Bool = false
+    @State private var showGameSettings = false
+    @ObservedObject private var nativeSettings = NativeSettingsManager.shared
+    let titleId: String
     
 
     
@@ -43,13 +33,22 @@ struct InGameConfigView: View {
         Menu {
             menuButton
         } label: {
-            ButtonView(controller: VirtualControllerManager.shared, disabled: true, button: .guide, opacity: 0.4)
+            Image(systemName: "line.3.horizontal.circle.fill")
+                .font(.system(size: 30))
+                .foregroundStyle(.white)
+                .frame(width: 48, height: 48)
+                .background(.black.opacity(0.55), in: RoundedRectangle(cornerRadius: 12))
+                .contentShape(Rectangle())
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
-        .padding()
-        .opacity(menuViewHandler.showButton ? 1 : 0)
-        .animation(.easeInOut(duration: 0.6), value: menuViewHandler.showButton)
+        .padding(12)
+        .accessibilityLabel("Game menu")
+        .disabled(ryujinxController.isStopping)
+        .sheet(isPresented: $showGameSettings) {
+            PerGameSettingsView(titleId)
+                .environmentObject(ryujinxController)
+        }
         .sheet(isPresented: $showControllerSettings) {
             controllerSelection
         }
@@ -97,16 +96,18 @@ struct InGameConfigView: View {
         }
         
         
+        Button {
+            showGameSettings = true
+        } label: { Label("Game settings", systemImage: "slider.horizontal.3") }
+
+        Toggle(isOn: nativeSettings.performacehud(false).projectedValue) {
+            Label("Performance information", systemImage: "gauge.with.needle")
+        }
+
         Button(role: .destructive) {
-            Ryujinx.stopEmulation()
-            Ryujinx.emulationView = nil
-            ryujinxController.isRunning = .stopped
+            ryujinxController.returnToLibrary()
         } label: {
-            Label {
-                Text("Exit (Unstable)")
-            } icon: {
-                Image(systemName: "x.circle")
-            }
+            Label("Return to library", systemImage: "house")
         }
          
     }

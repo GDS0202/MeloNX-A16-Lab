@@ -1,4 +1,4 @@
-# MeloNX A16 Lab 0.2 — candidata sperimentale
+# MeloNX A16 Lab 0.3 — candidata sperimentale
 
 Fork del sorgente completo ufficiale **MeloNX 2.7**, commit
 `13700519f3abc4e6d7ed8a065b118b2cc59bcd67` (tag annotato
@@ -12,6 +12,48 @@ misurati miglioramenti sull'iPad e non è una release stabile.
 L'iPad A16 ha 5 core CPU e 4 core GPU: il dimensionamento non assume i 6 core
 CPU degli iPhone A16. Le scelte sperimentali rimangono distinguibili dalle
 correzioni di stabilità.
+
+## Novità 0.3: feedback della prima IPA
+
+La build dal commit `1299c57` ha avviato BOTW sull'iPad dell'utente; sono stati
+segnalati viola e scatti. Questa revisione affronta difetti verificati nel
+sorgente; il miglioramento della partita e la correzione visiva non sono ancora
+confermati sul dispositivo. [Audit di questa revisione](AUDIT_03_GAMEPLAY_IT.md).
+
+- Menu sempre visibile nell'angolo superiore sinistro, sopra il controller.
+  Include impostazioni del titolo, informazioni prestazioni e ritorno alla libreria.
+- Arresto ordinato del core e della GPU con salvataggio finale cache, senza liberare
+  la superficie Metal mentre è usata. Driver condivisi disponibili per l'avvio successivo.
+- Impostazioni per gioco ereditate dai globali; nuovi file salvano gli override
+  effettivi tramite metadati compatibili col vecchio formato. I vecchi snapshot
+  espliciti sono conservati: usare `Use global settings for this game` per azzerarli.
+- Risoluzione, anisotropico, AA, filtro, aspect ratio, volume e async aggiornabili
+  alla chiusura delle impostazioni. Formati texture, CPU, memoria e altri parametri
+  richiedono il riavvio del gioco; le due opzioni A16 richiedono riavvio dell'app.
+- Telemetria 2 Hz con p95/p99, massimo e intervalli CPU >100 ms, hit delle texture
+  convertite, memoria disponibile, temperatura e Low Power Mode. Nessun cap FPS
+  introdotto; nessuna riduzione automatica sotto 1×.
+- Cache conversioni texture opzionale, attiva su A16 rilevato: 256 MiB su disco,
+  scritture fuori dal rendering, checksum e fallback normale per errori/corruzione.
+  Riduce conversioni ripetute quando c'è un hit; non evita il primo shader nuovo.
+- Polling input di fallback a 250 Hz su A16 con risveglio immediato per gli eventi;
+  rimossi task per ogni movimento touch e osservatori che restavano attivi dopo l'uscita.
+
+### Prova degli artefatti viola
+
+1. Conservare salvataggi e mod attuali e usare sempre lo stesso punto della mappa.
+2. Applicare `Texture compatibility test — 1×`, uscire dal gioco e riavviarlo:
+   ricompressione OFF ora disabilita davvero BC→ETC2/EAC. Può usare più RAM.
+3. Se il viola persiste, provare anche `Shader correctness test — 1×` e riavviare:
+   async OFF può aumentare le pause con shader nuovi. Non è il preset più veloce.
+4. `Apply A16 Performance – 1×` ripristina il preset veloce con ricompressione e
+   async ON. Le prove sono diagnostiche: non dichiarare risolto il viola senza verifica.
+
+Per la fluidità usare due passaggi sullo stesso tragitto e confrontare il secondo,
+a temperatura simile, annotando picchi CPU e hit. Non scaricare cache di altri:
+questa cache nasce solo dai dati convertiti localmente. La scala 1× handheld
+corrisponde al target 720p; la risoluzione dinamica interna scelta da BOTW resta
+indipendente dall'emulatore.
 
 ## Novità 0.2
 
@@ -78,50 +120,18 @@ dimostra, da sola, la causa degli scatti di BOTW.
 
 ## Cosa è verificato
 
-`a16/validation/` contiene verbale e log della compilazione gestita e dei test.
-I test delle code usano il file di produzione, sostituendo il driver con un
-simulatore controllabile. Non sono benchmark dell'emulazione.
+Per 0.3 sono passati localmente 20 controlli C# e 6 Python: scheduling,
+cache, JIT, default delle politiche host, conversioni, protocollo, callback e
+formati. Le conversioni streaming BC2/3/BC7 coincidono col riferimento su mip,
+layer e bordi parziali. I controlli Swift e la compilazione iOS vengono eseguiti
+in CI con il vero SDK; l'esito aggiornato è nella scheda Actions del commit.
 
-La compilazione C# gestita non è una build iOS. La CI verifica sintassi Swift
-ed esegue il type-check del solo ponte hardware contro l'SDK iOS, senza linkare.
-**Compilazione completa Swift/NativeAOT iOS, firma, installazione, JIT,
-estensione RAM e BOTW sul dispositivo restano da verificare**.
-Non sono dichiarati incrementi di FPS o riduzioni percentuali degli scatti.
-
-## Risoluzione e impostazioni
-
-Handheld 1× corrisponde normalmente al target 720p; la risoluzione dinamica
-interna del gioco rimane indipendente. Questa fork non certifica un minimo
-effettivo 1280×720. L'eventuale mod DRS deve essere identica fra le prove.
-Non è stata aggiunta una patch FPS al gioco né corretto il precedente cap a 25.
-
-Async compilation può far comparire nuovi effetti in ritardo, causare difetti
-grafici o crash: si può disattivare nelle impostazioni del titolo. Il profilo non
-modifica le opzioni di donazione RAM/GPU. Firma, entitlement memoria e JIT restano
-necessari secondo il metodo d'installazione. La RAM fisica non aumenta.
-
-L'app si chiama **MeloNX A16 Lab**, ID `dev.a16lab.MeloNX`, per affiancare
-l'originale. Salvataggi, cache e impostazioni appartengono a un contenitore
-separato e non vengono trasferiti automaticamente: conservarne una copia.
-
-## Build cloud senza un Mac personale
-
-**Generazione IPA sospesa su richiesta dell'utente. Non è stata avviata.**
-Le seguenti istruzioni servono alla fase successiva, dopo le altre modifiche:
-
-
-1. Aprire **Actions → Build A16 unsigned IPA → Run workflow**.
-2. Selezionare `optimized`.
-3. Quando il job termina con successo, scaricare l'artifact
-   `MeloNX-A16-Lab-optimized-unsigned`.
-4. L'artifact conterrà IPA e SHA-256 **solo se la compilazione riesce**.
-5. Firmare con il metodo già funzionante, mantenere entitlement memoria ed
-   estensione RAM e abilitare JIT con StikDebug.
-
-Il workflow usa runner `xcode-27`, Xcode 27.1 e .NET 10.0.403. SDK 27 è necessario
-per API UIKit 27 già presenti nel sorgente originale. Non contiene credenziali.
-Il workflow è predisposto ma non ancora eseguito: possono emergere ulteriori
-problemi di compilazione o firma. Su Mac: `bash a16/build_ipa.sh`.
+La prima IPA 0.2 è stata compilata e provata, con gli artefatti e i cali segnalati.
+La verifica 0.3 usa `xcodebuild build` senza archive o IPA. Non misura BOTW e
+non verifica JIT, entitlement, memoria, controller o driver sul dispositivo.
+Lo script IPA manuale esistente resta disponibile per una successiva compilazione
+richiesta dall'utente, ma il suo nome di output storico contiene ancora 0.2:
+identificare questa revisione dal commit e dal build number 27103.
 
 ## Controllo e confronto
 

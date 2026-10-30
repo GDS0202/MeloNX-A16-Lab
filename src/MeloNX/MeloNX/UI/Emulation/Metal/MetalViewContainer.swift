@@ -49,14 +49,8 @@ struct MetalViewContainer: View {
                     if isPortrait && !isStretched {
                         Rectangle()
                             .fill(Color.clear)
-                            .frame(width: geo.size.width, height: .infinity)
-                            .if(nativeSettingsManager.showScreenShotButton(true).bool) { view in
-                                view
-                                    .overlay(alignment: .topLeading) {
-                                        InGameConfigView()
-                                    }
-                            }
-                            .if(nativeSettingsManager.overlayBelowScreen(true).bool && !airplay) { view in
+                            .frame(width: geo.size.width).frame(maxHeight: .infinity)
+                            .if(nativeSettingsManager.performacehud(false).bool && nativeSettingsManager.overlayBelowScreen(true).bool && !airplay) { view in
                                 view
                                     .overlay(alignment: overlayAlignment) {
                                         PerformanceOverlayView(statisticsHandler: statisticsHandler)
@@ -87,12 +81,6 @@ struct MetalViewContainer: View {
             .onChange(of: portrait) { newValue in
                 updateOrientation(newValue)
             }
-        }
-        .if(!(isPortrait && !isStretched) && nativeSettingsManager.showScreenShotButton(true).bool) { view in
-            view
-                .overlay(alignment: .topLeading) {
-                    InGameConfigView()
-                }
         }
         .overlay(alignment: overlayAlignment) {
             if nativeSettingsManager.performacehud(false).bool && !showingPerformanceOverlay && !airplay {

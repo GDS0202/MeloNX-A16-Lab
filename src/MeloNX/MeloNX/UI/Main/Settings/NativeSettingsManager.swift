@@ -148,7 +148,7 @@ class Setting<T: Any>: Hashable, AnySettingProtocol {
     }
     
     var bool: Bool {
-        get { getValue() as? Bool ?? false }
+        get { getValue() as? Bool ?? (uddefault as? Bool ?? false) }
         set { self.set(newValue) }
     }
     

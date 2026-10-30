@@ -12,6 +12,12 @@ namespace Ryujinx.Graphics.Texture
     /// </summary>
     public static class ETC2Transcoder
     {
+        private static readonly Lazy<TranscodeDiskCache> DiskCache = new(TranscodeDiskCache.CreateForCurrentProcess);
+        public static long CacheHits => DiskCache.IsValueCreated ? DiskCache.Value?.Hits ?? 0 : 0;
+
+        private static TranscodeDiskCache CacheFor(ReadOnlyMemory<byte> data) =>
+            data.Length >= 4096 && data.Length <= 4 * 1024 * 1024 ? DiskCache.Value : null;
+
         private const int TexelsPerBlock = 16;
 
         /// <summary>
@@ -37,7 +43,7 @@ namespace Ryujinx.Graphics.Texture
         /// </summary>
         public static MemoryOwner<byte> TranscodeBC1ToEtc2Pta(ReadOnlyMemory<byte> data)
         {
-            return Transcode(data, 1, TranscodeBC1Blocks);
+            return Transcode(data, 1, TranscodeBC1Blocks, 1);
         }
 
         /// <summary>
@@ -45,7 +51,7 @@ namespace Ryujinx.Graphics.Texture
         /// </summary>
         public static MemoryOwner<byte> TranscodeBC4ToEacR11(ReadOnlyMemory<byte> data, bool signed)
         {
-            return Transcode(data, 1, signed ? TranscodeBC4BlocksSigned : TranscodeBC4BlocksUnsigned);
+            return Transcode(data, 1, signed ? TranscodeBC4BlocksSigned : TranscodeBC4BlocksUnsigned, signed ? 14 : 4);
         }
 
         /// <summary>
@@ -53,37 +59,41 @@ namespace Ryujinx.Graphics.Texture
         /// </summary>
         public static MemoryOwner<byte> TranscodeBC5ToEacRG11(ReadOnlyMemory<byte> data, bool signed)
         {
-            return Transcode(data, 2, signed ? TranscodeBC4BlocksSigned : TranscodeBC4BlocksUnsigned);
+            return Transcode(data, 2, signed ? TranscodeBC4BlocksSigned : TranscodeBC4BlocksUnsigned, signed ? 15 : 5);
         }
 
         private delegate void RgbaBlockDecoder(Span<byte> output, ReadOnlySpan<byte> input);
 
         public static MemoryOwner<byte> TranscodeBC2ToEtc2Rgba(ReadOnlyMemory<byte> data, int width, int height, int depth, int levels, int layers)
         {
-            return TranscodeRgba(data, width, height, depth, levels, layers, BCnDecoder.DecodeBC2Block);
+            return TranscodeRgba(data, width, height, depth, levels, layers, BCnDecoder.DecodeBC2Block, 2);
         }
 
         public static MemoryOwner<byte> TranscodeBC3ToEtc2Rgba(ReadOnlyMemory<byte> data, int width, int height, int depth, int levels, int layers)
         {
-            return TranscodeRgba(data, width, height, depth, levels, layers, BCnDecoder.DecodeBC3Block);
+            return TranscodeRgba(data, width, height, depth, levels, layers, BCnDecoder.DecodeBC3Block, 3);
         }
 
         public static MemoryOwner<byte> TranscodeBC7ToEtc2Rgba(ReadOnlyMemory<byte> data, int width, int height, int depth, int levels, int layers)
         {
             return TranscodeRgba(data, width, height, depth, levels, layers,
-                static (output, input) => BC7Decoder.Decode(output, input, 4, 4));
+                static (output, input) => BC7Decoder.Decode(output, input, 4, 4), 7);
         }
 
         // BC2/3/7 and ETC2 RGBA all use sixteen bytes per 4x4 block. Only a single decoded
         // block is needed per worker, even for large textures with many mip levels/layers.
         private static MemoryOwner<byte> TranscodeRgba(
-            ReadOnlyMemory<byte> data, int width, int height, int depth, int levels, int layers, RgbaBlockDecoder decoder)
+            ReadOnlyMemory<byte> data, int width, int height, int depth, int levels, int layers, RgbaBlockDecoder decoder, int format)
         {
             ArgumentOutOfRangeException.ThrowIfNegativeOrZero(width);
             ArgumentOutOfRangeException.ThrowIfNegativeOrZero(height);
             ArgumentOutOfRangeException.ThrowIfNegativeOrZero(depth);
             ArgumentOutOfRangeException.ThrowIfNegativeOrZero(levels);
             ArgumentOutOfRangeException.ThrowIfNegativeOrZero(layers);
+
+            TranscodeDiskCache cache = CacheFor(data);
+            string key = cache != null ? TranscodeDiskCache.CreateKey(data.Span, format, width, height, depth, levels, layers) : null;
+            if (cache != null && cache.TryRead(key, data.Length, out MemoryOwner<byte> cached)) return cached;
 
             MemoryOwner<byte> output = MemoryOwner<byte>.Rent(data.Length);
 
@@ -128,6 +138,7 @@ namespace Ryujinx.Graphics.Texture
                 }
 
                 data.Span[offset..].CopyTo(output.Span[offset..]);
+                cache?.TryStore(key, output.Span);
                 return output;
             }
             catch
@@ -171,10 +182,14 @@ namespace Ryujinx.Graphics.Texture
             }
         }
 
-        private static MemoryOwner<byte> Transcode(ReadOnlyMemory<byte> data, int ulongsPerBlock, BlockTranscoder transcoder)
+        private static MemoryOwner<byte> Transcode(ReadOnlyMemory<byte> data, int ulongsPerBlock, BlockTranscoder transcoder, int format)
         {
             int blockCount = data.Length / (ulongsPerBlock * sizeof(ulong));
             int ulongCount = blockCount * ulongsPerBlock;
+
+            TranscodeDiskCache cache = CacheFor(data);
+            string key = cache != null ? TranscodeDiskCache.CreateKey(data.Span, format) : null;
+            if (cache != null && cache.TryRead(key, data.Length, out MemoryOwner<byte> cached)) return cached;
 
             MemoryOwner<byte> output = MemoryOwner<byte>.Rent(data.Length);
             Memory<byte> outputMemory = output.Memory;
@@ -202,7 +217,7 @@ namespace Ryujinx.Graphics.Texture
 
             // Any trailing bytes that do not form a whole block are left as-is.
             data.Span[(ulongCount * sizeof(ulong))..].CopyTo(outputMemory.Span[(ulongCount * sizeof(ulong))..]);
-
+            cache?.TryStore(key, output.Span);
             return output;
         }
 

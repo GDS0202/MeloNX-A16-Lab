@@ -5,9 +5,11 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Ryujinx.Common/Ryujinx.Common.csproj" />
+    <ProjectReference Include="../../src/Ryujinx.Graphics.Gpu/Ryujinx.Graphics.Gpu.csproj" />
     <ProjectReference Include="../../src/Ryujinx.Memory/Ryujinx.Memory.csproj" />
     <ProjectReference Include="../../src/Ryujinx.Graphics.Texture/Ryujinx.Graphics.Texture.csproj" />
     <PackageReference Include="Silk.NET.Vulkan" />
+    <Compile Include="../../src/Ryujinx.Library/LiveGraphicsSettings.cs" Link="LiveGraphicsSettings.cs" />
     <Compile Include="$(SchedulerUnderTest)" Link="BackgroundCompilationScheduler.cs" />
     <Compile Include="../../src/Ryujinx.Graphics.Vulkan/FrameTimeMetrics.cs" Link="FrameTimeMetrics.cs" />
     <Compile Include="../../src/Ryujinx.Graphics.Vulkan/PipelineCacheHeader.cs" Link="PipelineCacheHeader.cs" />

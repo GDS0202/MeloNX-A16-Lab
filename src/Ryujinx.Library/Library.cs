@@ -89,6 +89,8 @@ namespace Ryujinx.Library
         private static readonly Lock inputConfigurationLock = new();
         private static KeyboardConfigNative? _keyboardConfig = null;
 
+        private static int _stopRequested;
+
         [UnmanagedCallersOnly(EntryPoint = "main_ryujinx_sdl")]
         public static unsafe int MainExternal(OptionsNative* nativeOptions)
         {
@@ -96,7 +98,7 @@ namespace Ryujinx.Library
             {
                 Options managed = OptionsNativeHelper.FromNative(nativeOptions);
                 OptionsNativeHelper.Free(nativeOptions);
-                Load(managed);
+                if (Volatile.Read(ref _stopRequested) == 0) Load(managed);
             }
             catch (Exception e)
             {
@@ -104,6 +106,10 @@ namespace Ryujinx.Library
                 return -1;
             }
 
+            finally
+            {
+                Interlocked.Exchange(ref _stopRequested, 0);
+            }
             return 0;
         }
 
@@ -182,13 +188,19 @@ namespace Ryujinx.Library
         [UnmanagedCallersOnly(EntryPoint = "stop_emulation")]
         public static void StopEmulation()
         {
-            if (_window != null)
-            {
-                _window.Exit();
-                _emulationContext.Dispose();
-            }
+            Interlocked.Exchange(ref _stopRequested, 1);
+            _window?.Exit();
         }
         
+        [UnmanagedCallersOnly(EntryPoint = "apply_runtime_graphics")]
+        public static byte ApplyRuntimeGraphics(float scale, float anisotropy, int aa, int filter, int level,
+            float metalFxScale, int aspect, float volume, byte asyncShaders)
+        {
+            LiveGraphicsSettings settings = LiveGraphicsSettings.Create(scale, anisotropy, aa, filter, level,
+                metalFxScale, aspect, volume, asyncShaders != 0);
+            return (byte)(_window?.QueueGraphicsSettings(settings) == true ? 1 : 0);
+        }
+
         public static nint GetNativeMetalLayer()
         {
             lock (metalLayerLock)
@@ -959,7 +971,22 @@ namespace Ryujinx.Library
 
             while (true)
             {
-                LoadApplication(option);
+                bool loaded;
+                try { loaded = LoadApplication(option); }
+                finally
+                {
+                    // Also release resources when title loading fails before Execute owns them.
+                    if (_window != null)
+                    {
+                        try { _emulationContext?.Dispose(); }
+                        finally
+                        {
+                            try { _emulationContext?.DisposeGpu(); }
+                            finally { _window.Dispose(); _window = null; _emulationContext = null; }
+                        }
+                    }
+                }
+                if (!loaded) break;
 
                 if (_userChannelPersistence.PreviousIndex == -1 || !_userChannelPersistence.ShouldRestart)
                     break;
@@ -967,7 +994,8 @@ namespace Ryujinx.Library
                 _userChannelPersistence.ShouldRestart = false;
             }
 
-            _inputManager.Dispose();
+            // Initialized once for the app, also used by library/controller screens.
+            // Window owns per-game Npad/touch managers; keep the shared drivers for the next launch.
 
             GC.Collect(2, GCCollectionMode.Aggressive, blocking: true, compacting: true);
 
@@ -1110,11 +1138,31 @@ namespace Ryujinx.Library
 
             DisplaySleep.Prevent();
 
-            _window.Initialize(_emulationContext, _inputConfiguration, _enableKeyboard, _enableMouse);
-            _window.Execute();
-
-            _emulationContext.Dispose();
-            _window.Dispose();
+            WindowBase window = _window;
+            Switch device = _emulationContext;
+            PresentationStatistics.Reset();
+            try
+            {
+                window.Initialize(device, _inputConfiguration, _enableKeyboard, _enableMouse);
+                if (Volatile.Read(ref _stopRequested) != 0) window.Exit();
+                window.Execute();
+            }
+            finally
+            {
+                // Same ownership as the desktop frontend: GPU frontend has drained before disposal.
+                try { device.Dispose(); }
+                finally
+                {
+                    try { device.DisposeGpu(); }
+                    finally
+                    {
+                        _window = null;
+                        _emulationContext = null;
+                        try { window.Dispose(); }
+                        finally { DisplaySleep.Restore(); }
+                    }
+                }
+            }
 
             if (OperatingSystem.IsWindows())
             {
@@ -1130,6 +1178,7 @@ namespace Ryujinx.Library
             Logger.RestartTime();
 
             WindowBase window = CreateWindow(options);
+            _window = window;
 
             if (window is MoltenVKWindow mvulkanWindow)
                 mvulkanWindow.SetNativeWindow(nativeMetalLayer);

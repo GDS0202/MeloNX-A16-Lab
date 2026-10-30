@@ -18,7 +18,17 @@ namespace Ryujinx.Common.Callbacks
 
     public static class CallbackRegistry
     {
-        private record Entry(SwiftDataCallback Callback, nint UserData);
+        // Retirement waits for an in-flight callback before Swift may release userData.
+        private sealed class Entry(SwiftDataCallback callback, nint userData)
+        {
+            private readonly object _gate = new();
+            private bool _retired;
+            public void Retire() { lock (_gate) _retired = true; }
+            public void Invoke(ref CallbackData data)
+            {
+                lock (_gate) { if (!_retired) callback(ref data, userData); }
+            }
+        }
 
         private static readonly ConcurrentDictionary<string, Entry> _callbacks = new();
 
@@ -30,14 +40,19 @@ namespace Ryujinx.Common.Callbacks
             if (name is null) return;
 
             var cb = Marshal.GetDelegateForFunctionPointer<SwiftDataCallback>(callbackPtr);
-            _callbacks[name] = new Entry(cb, userData);
+            Entry replacement = new(cb, userData);
+            _callbacks.AddOrUpdate(name, replacement, (_, previous) =>
+            {
+                previous.Retire();
+                return replacement;
+            });
         }
 
         public static void UnregisterCallback(nint namePtr)
         {
             var name = Marshal.PtrToStringUTF8(namePtr);
             if (name is null) return;
-            _callbacks.TryRemove(name, out _);
+            if (_callbacks.TryRemove(name, out Entry previous)) previous.Retire();
         }
 
         public static void RegisterManagedCallback(string name, Action<byte[]> cb)
@@ -53,7 +68,7 @@ namespace Ryujinx.Common.Callbacks
                 if (bytes.IsEmpty)
                 {
                     var empty = CallbackData.Empty;
-                    entry.Callback(ref empty, entry.UserData);
+                    entry.Invoke(ref empty);
                     return true;
                 }
 
@@ -62,7 +77,7 @@ namespace Ryujinx.Common.Callbacks
                 try
                 {
                     var cd = new CallbackData { Ptr = handle.AddrOfPinnedObject(), Len = arr.Length };
-                    entry.Callback(ref cd, entry.UserData);
+                    entry.Invoke(ref cd);
                 }
                 finally { handle.Free(); }
 
@@ -83,7 +98,7 @@ namespace Ryujinx.Common.Callbacks
             if (_callbacks.TryGetValue(name, out var entry))
             {
                 var empty = CallbackData.Empty;
-                entry.Callback(ref empty, entry.UserData);
+                entry.Invoke(ref empty);
                 return true;
             }
 
@@ -107,7 +122,7 @@ namespace Ryujinx.Common.Callbacks
             if (_callbacks.TryGetValue(name, out var entry))
             {
                 var cd = new CallbackData { Ptr = (nint)ptr, Len = len };
-                entry.Callback(ref cd, entry.UserData);
+                entry.Invoke(ref cd);
                 return true;
             }
 
@@ -135,7 +150,7 @@ namespace Ryujinx.Common.Callbacks
             if (_callbacks.TryGetValue(name, out var entry))
             {
                 var cd = new CallbackData { Ptr = ptr, Len = len };
-                entry.Callback(ref cd, entry.UserData);
+                entry.Invoke(ref cd);
                 return true;
             }
 

@@ -34,8 +34,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Parse changed Swift sources (no app or IPA build)
-        run: xcrun swiftc -frontend -parse src/MeloNX/MeloNX/UI/MeloNXApp.swift src/MeloNX/MeloNX/UI/Main/Settings/PerGameSettings.swift src/MeloNX/MeloNX/Common/HostRuntime.swift
+      - name: Parse all app Swift sources
+        run: find src/MeloNX/MeloNX -name '*.swift' -print0 | xargs -0 xcrun swiftc -frontend -parse
+      - name: Execute production Swift settings and protocol regressions
+        run: |
+          xcrun swiftc -swift-version 5 -parse-as-library src/MeloNX/MeloNX/UI/Main/Settings/NativeSettingsManager.swift src/MeloNX/MeloNX/Common/SettingsOverlay.swift src/MeloNX/MeloNX/Common/EmulationStatistics.swift a16/tests_swift/SwiftSettingsChecks.swift -o /tmp/a16-swift-checks
+          /tmp/a16-swift-checks
       - name: Type-check host feedback against the iOS SDK (no linking)
         run: |
           python3 - <<'PY'
@@ -45,3 +49,24 @@ jobs:
           Path('/tmp/a16-host-bridge.h').write_text('#include <stdint.h>\n' + declaration + '\n')
           PY
           xcrun swiftc -typecheck -swift-version 5 -target arm64-apple-ios16.0 -sdk "$(xcrun --sdk iphoneos --show-sdk-path)" -import-objc-header /tmp/a16-host-bridge.h src/MeloNX/MeloNX/Common/HostRuntime.swift
+  ios-compile:
+    runs-on: xcode-27
+    timeout-minutes: 60
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.403
+      - name: Compile and link iOS core and UI without packaging an IPA
+        run: bash a16/check_ios_build.sh
+      - name: Compiler logs only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: A16-source-compiler-logs
+          path: a16/out/logs
+          if-no-files-found: warn

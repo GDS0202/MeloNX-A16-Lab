@@ -15,6 +15,7 @@ using Ryujinx.HLE.Loaders.Processes;
 using Ryujinx.HLE.UI;
 using Ryujinx.Memory;
 using System;
+using System.Threading;
 
 namespace Ryujinx.HLE
 {
@@ -199,10 +200,13 @@ namespace Ryujinx.HLE
             Dispose(true);
         }
 
+        private int _disposed;
+
         protected virtual void Dispose(bool disposing)
         {
-            if (disposing)
+            if (disposing && Interlocked.Exchange(ref _disposed, 1) == 0)
             {
+                Statistics.Dispose();
                 System.Dispose();
                 AudioDeviceDriver.Dispose();
                 FileSystem.Dispose();
