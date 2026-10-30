@@ -1,5 +1,6 @@
 using Ryujinx.Common.Configuration;
 using Ryujinx.Common.Memory;
+using Ryujinx.Common.Utilities;
 using Ryujinx.Memory;
 using System;
 using System.Buffers;
@@ -29,8 +30,7 @@ namespace Ryujinx.Graphics.Texture
         private readonly Thread _writer;
         private long _queuedBytes;
         private long _hits;
-        private static long _totalHits;
-        public static long TotalHits => Interlocked.Read(ref _totalHits);
+        public static long TotalHits => HostCacheStatistics.ConvertedTextureHits;
         private long _diskBytes;
         private int _fileCount;
         private bool _stopping;
@@ -87,7 +87,7 @@ namespace Ryujinx.Graphics.Texture
                     result = output;
                     output = null;
                     Interlocked.Increment(ref _hits);
-                    Interlocked.Increment(ref _totalHits);
+                    HostCacheStatistics.RecordConvertedTextureHit();
                     return true;
                 }
                 finally { output?.Dispose(); }
