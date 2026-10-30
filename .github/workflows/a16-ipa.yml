@@ -3,7 +3,7 @@ on:
   # A change to this workflow triggers the first optimized IPA build.
   push:
     branches: [master]
-    paths: ['.github/workflows/a16-ipa.yml']
+    paths: ['.github/workflows/a16-ipa.yml', 'a16/build_ipa.sh']
   workflow_dispatch:
     inputs:
       variant:
