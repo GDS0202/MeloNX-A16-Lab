@@ -25,7 +25,8 @@ confermati sul dispositivo. [Audit di questa revisione](AUDIT_03_GAMEPLAY_IT.md)
 - Arresto ordinato del core e della GPU con salvataggio finale cache, senza liberare
   la superficie Metal mentre è usata. Driver condivisi disponibili per l'avvio successivo.
 - Impostazioni per gioco ereditate dai globali; nuovi file salvano gli override
-  effettivi tramite metadati compatibili col vecchio formato. I vecchi snapshot
+  effettivi tramite metadati compatibili col vecchio formato. Corrette anche
+  lettura e persistenza degli enum delle impostazioni native (posizione HUD, ecc.). I vecchi snapshot
   espliciti sono conservati: usare `Use global settings for this game` per azzerarli.
 - Risoluzione, anisotropico, AA, filtro, aspect ratio, volume e async aggiornabili
   alla chiusura delle impostazioni. Formati texture, CPU, memoria e altri parametri

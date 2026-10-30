@@ -11,7 +11,7 @@ enum HostRuntime {
         setenv("MELONX_A16_POLICY", isA16 && policyEnabled ? "1" : "0", 1)
         let textureCacheEnabled = UserDefaults.standard.object(forKey: "a16TextureDiskCacheEnabled") as? Bool ?? true
         setenv("MELONX_TEXTURE_CACHE", isA16 && textureCacheEnabled ? "1" : "0", 1)
-        print("[A16Host] GPU=\(device.name), cpu=\(ProcessInfo.processInfo.activeProcessorCount), ramMiB=\(ProcessInfo.processInfo.physicalMemory / 1048576), apple8=\(device.supportsFamily(.apple8)), argumentBuffersTier=\(device.argumentBuffersSupport.rawValue), a16Policy=\(isA16 && policyEnabled)")
+        print("[A16Host] GPU=\(device.name), cpu=\(ProcessInfo.processInfo.activeProcessorCount), ramMiB=\(ProcessInfo.processInfo.physicalMemory / 1048576), apple8=\(device.supportsFamily(.apple8)), argumentBuffersTier=\(device.argumentBuffersSupport.rawValue), a16Policy=\(isA16 && policyEnabled), textureDiskCache=\(isA16 && textureCacheEnabled)")
         if #available(iOS 16.4, *) {
             print("[A16Host] nativeBC=\(device.supportsBCTextureCompression)")
         }

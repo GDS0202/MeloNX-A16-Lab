@@ -161,6 +161,13 @@ class Setting<T: Any>: Hashable, AnySettingProtocol {
             return directValue
         }
         
+        // Enum setters persist raw values. Reconstruct them before trying archived data.
+        if let raw = UserDefaults.standard.object(forKey: key),
+           let rawType = T.self as? any RawRepresentable.Type,
+           let decoded = decodeRawValue(raw, as: rawType) as? T {
+            return decoded
+        }
+
         if let data = UserDefaults.standard.data(forKey: key),
            let decoded = decodeFromData(data, as: T.self) {
             return decoded
@@ -169,6 +176,11 @@ class Setting<T: Any>: Hashable, AnySettingProtocol {
         return nil
     }
     
+    private func decodeRawValue<R: RawRepresentable>(_ value: Any, as type: R.Type) -> R? {
+        guard let raw = value as? R.RawValue else { return nil }
+        return R(rawValue: raw)
+    }
+
     fileprivate func set(_ value: Any?) {
         guard let value = value else {
             UserDefaults.standard.removeObject(forKey: name)

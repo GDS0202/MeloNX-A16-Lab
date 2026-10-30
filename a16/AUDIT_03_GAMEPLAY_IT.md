@@ -96,3 +96,9 @@ la configurazione lo rilasciavano. Il possesso ora è esplicito: `Dispose` del
 client non disconnette; `DetachGamepad` e lo smaltimento del driver lo fanno.
 Un test riproduce rilascio dal primo titolo, input nel successivo e distacco reale.
 Eliminata anche l'apertura di un handle tastiera mai utilizzato a ogni Window.
+
+I valori enum delle impostazioni native (posizione HUD, ordinamento, ecc.) erano
+scritti come rawValue ma non ricostruiti in lettura: ricadevano sul default.
+La lettura ora ricostruisce enum String e Int32, compresi fallback e override,
+verificati nel test Swift con il vero NativeSettingsManager. L'HUD in alto a
+sinistra riserva spazio al pulsante menu.

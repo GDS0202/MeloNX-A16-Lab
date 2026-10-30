@@ -22,7 +22,19 @@ struct SwiftSettingsChecks {
         check(inherited.bool && !global.setting(forKey: prefix, default: true).bool, "Game override contaminated globals")
         game.reset()
         check(!inherited.bool, "Reset did not restore global fallback")
-        print("PASS native defaults, global inheritance, explicit false, override and reset")
+        enum Position: String { case left, right }
+        enum Mode: Int32 { case first = 1, second = 2 }
+        let position = global.setting(forKey: prefix + "position", default: Position.right)
+        position.value = .left
+        check(position.value == .left, "String raw enum was written but could not be read")
+        let mode = global.setting(forKey: prefix + "mode", default: Mode.first)
+        mode.value = .second
+        check(mode.value == .second, "Int32 raw enum was written but could not be read")
+        let fallbackPosition = game.setting(forKey: prefix + "position", default: Position.right)
+        check(fallbackPosition.value == .left, "Enum global inheritance failed")
+        fallbackPosition.value = .right
+        check(fallbackPosition.value == .right && position.value == .left, "Per-game enum override failed")
+        print("PASS native defaults, global inheritance, enum persistence, override and reset")
 
         func json(_ object: [String: Any]) throws -> Data { try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys]) }
         func object(_ data: Data) throws -> [String: Any] { try JSONSerialization.jsonObject(with: data) as! [String: Any] }

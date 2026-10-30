@@ -30,5 +30,7 @@ PASS texture recompression OFF and native format preservation
 Python archive verification: 6 checks passed.
 Initial source CI de59cc1: Linux complete core and 20 regressions passed; 3 Swift groups and iOS host feedback typecheck passed.
 Full iOS compiler found missing Combine imports in statistics views; fixed in following commit.
-Final iOS source-check result: see Actions for the latest branch commit.
+Source CI ee32f5d: complete Linux build + 21 checks (normal, AVX2 off, intrinsics off), descriptor IL, 6 Python, 3 Swift groups and full iOS NativeAOT + app compile/link all passed.
+https://github.com/GDS0202/MeloNX-A16-Lab/actions/runs/41123281363
+The following commit extends native enum persistence tests; see its source CI for the final result.
 No iPad benchmark or visual correctness claim.

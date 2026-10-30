@@ -585,7 +585,8 @@ namespace Ryujinx.Graphics.Vulkan
                     $"a16Policy={HostPerformance.IsA16}, textureWorkers={HostPerformance.TextureWorkerLimit}, " +
                     $"footprintMiB={HostMemoryBudget.FootprintBytes / 1048576}, " +
                     $"availableMiB={HostMemoryBudget.AvailableBytes / 1048576}, " +
-                    $"gc0={GC.CollectionCount(0)}, gc1={GC.CollectionCount(1)}, gc2={GC.CollectionCount(2)}] " +
+                    $"gc0={GC.CollectionCount(0)}, gc1={GC.CollectionCount(1)}, gc2={GC.CollectionCount(2)}, " +
+                    $"convertedCacheHits={Ryujinx.Graphics.Texture.TranscodeDiskCache.TotalHits}] " +
                     _gd.BackgroundCompilationScheduler.GetDiagnostics());
                 _frameTimes.Reset();
                 _frameReportTimestamp = now;

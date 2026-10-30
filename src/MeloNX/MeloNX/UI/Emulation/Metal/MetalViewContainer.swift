@@ -86,6 +86,7 @@ struct MetalViewContainer: View {
             if nativeSettingsManager.performacehud(false).bool && !showingPerformanceOverlay && !airplay {
                 PerformanceOverlayView(statisticsHandler: statisticsHandler)
                     .padding(10)
+                    .padding(.top, nativeSettingsManager.performancePosition(PerformanceOverlayPosition.topRight).value == .topLeft ? 64 : 0)
                     .onTapGesture {
                         menuViewHandler.triggerButton()
                     }

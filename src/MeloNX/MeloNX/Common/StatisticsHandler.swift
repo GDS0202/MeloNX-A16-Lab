@@ -18,7 +18,13 @@ final class StatisticsHandler: ObservableObject {
             guard let pointer = data.ptr,
                   let decoded = EmulationStatistics.decode(UnsafeRawPointer(pointer), length: Int(data.len)) else { return }
             // Copy values while the native stack packet is alive, publish once on the main actor.
-            DispatchQueue.main.async { [weak self] in self?.sample = decoded }
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                // Keep the loading latch working without rebuilding the emulation view
+                // on every telemetry packet when the HUD is disabled.
+                guard decoded.started != self.sample.started || NativeSettingsManager.shared.performacehud(false).bool else { return }
+                self.sample = decoded
+            }
         }
     }
 
