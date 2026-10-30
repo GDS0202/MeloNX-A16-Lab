@@ -1,17 +1,28 @@
 {
   "date_local": "2026-10-30",
   "timezone": "Europe/Rome",
-  "fork_version": "0.1-experimental",
+  "fork_version": "0.2-experimental",
   "upstream_commit": "13700519f3abc4e6d7ed8a065b118b2cc59bcd67",
   "sdk": "10.0.403",
-  "managed_core_linux_release": "passed",
-  "scheduler_metrics_checks": 7,
+  "managed_core_linux_release": "passed; final incremental check 0 warnings / 0 errors; clean upstream-dependent builds can emit inherited warnings",
+  "managed_core_sha256": "d1305d62b7f4e52fed88e145444d77a18925e3a66d03c15d03d0181e01d1c7a4",
+  "regression_checks": 13,
+  "texture_reference_blocks_per_backend": 12288,
+  "backends_checked": [
+    "AVX2",
+    "SIMD128 (AVX2 disabled)",
+    "scalar (hardware intrinsics disabled)"
+  ],
+  "descriptor_hotpath_newarr_instructions": 0,
   "archive_verifier_tests": 6,
-  "upstream_countercheck": "expected failure: ready pipeline blocked by maintenance",
-  "workflow_yaml_and_shell_syntax": "passed",
-  "ios_compilation": "not performed",
+  "workflow_yaml_shell_plist_control_hashes": "passed",
+  "control_managed_build": "passed (clean Linux build; 18 inherited warnings, 0 errors)",
+  "github_source_ci": "pending for 0.2; 0.1 passed",
+  "swift_syntax_and_host_sdk_typecheck": "pending CI",
+  "ios_full_compilation": "not performed",
   "ipad_test": "not performed",
-  "performance_gain": "not measured",
-  "github_publication": "not performed: browser authentication interrupted",
-  "cloud_build": "not started"
+  "performance_gain_on_a16": "not measured",
+  "github_repository": "https://github.com/GDS0202/MeloNX-A16-Lab",
+  "ipa_generation": "not started, explicitly deferred by user",
+  "descriptor_control_newarr_instructions": 6
 }

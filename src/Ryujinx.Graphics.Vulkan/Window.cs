@@ -7,6 +7,8 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using Ryujinx.Common.Logging;
+using Ryujinx.Common.Utilities;
+using Ryujinx.Memory;
 using VkFormat = Silk.NET.Vulkan.Format;
 
 namespace Ryujinx.Graphics.Vulkan
@@ -119,6 +121,11 @@ namespace Ryujinx.Graphics.Vulkan
             }
 
             uint imageCount = capabilities.MinImageCount + 1;
+            if (_gd.IsMoltenVk)
+            {
+                // Metal may retain drawable images until display; prefer triple buffering.
+                imageCount = Math.Max(3u, imageCount);
+            }
             if (capabilities.MaxImageCount > 0 && imageCount > capabilities.MaxImageCount)
             {
                 imageCount = capabilities.MaxImageCount;
@@ -561,7 +568,13 @@ namespace Ryujinx.Graphics.Vulkan
                     $"p99BucketMs={_frameTimes.PercentileUpperBound(0.99)}, " +
                     $"maxMs={_frameTimes.MaximumMilliseconds:F2}, " +
                     $"over50={_frameTimes.Over50Ms}, over100={_frameTimes.Over100Ms}, " +
-                    $"over250={_frameTimes.Over250Ms}.");
+                    $"over250={_frameTimes.Over250Ms}. " +
+                    $"host[thermal={HostPerformance.ThermalState}, lowPower={HostPerformance.LowPowerMode}, " +
+                    $"a16Policy={HostPerformance.IsA16}, textureWorkers={HostPerformance.TextureWorkerLimit}, " +
+                    $"footprintMiB={HostMemoryBudget.FootprintBytes / 1048576}, " +
+                    $"availableMiB={HostMemoryBudget.AvailableBytes / 1048576}, " +
+                    $"gc0={GC.CollectionCount(0)}, gc1={GC.CollectionCount(1)}, gc2={GC.CollectionCount(2)}] " +
+                    _gd.BackgroundCompilationScheduler.GetDiagnostics());
                 _frameTimes.Reset();
                 _frameReportTimestamp = now;
             }

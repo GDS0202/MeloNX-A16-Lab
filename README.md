@@ -1,8 +1,11 @@
-# MeloNX A16 Lab — experimental fork 0.1
+# MeloNX A16 Lab — experimental fork 0.2
 
-Based on official MeloNX 2.7. Pipeline cache scheduling changes, an explicit
-per-game 1× performance preset and CPU presentation interval diagnostics.
-iOS compilation and device performance remain unverified.
+Based on official MeloNX 2.7. A16 thermal-aware CPU work, portable SIMD texture
+expansion, reduced descriptor allocations, JIT stability and pipeline-cache fixes.
+Explicit per-game 1× preset and CPU presentation interval diagnostics.
+iOS compilation and device performance remain unverified. No IPA generated.
+
+**[Audit tecnico e decisioni](a16/AUDIT_2026-10-30_IT.md)**
 
 **[Stato del progetto e istruzioni](a16/README_IT.md)**
 

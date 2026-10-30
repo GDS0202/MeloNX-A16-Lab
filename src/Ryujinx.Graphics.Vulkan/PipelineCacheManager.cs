@@ -141,6 +141,9 @@ namespace Ryujinx.Graphics.Vulkan
         private readonly CacheState _mainState;
         private readonly CacheState[] _workerStates;
         private readonly string _cacheDirectory;
+        private readonly uint _vendorId;
+        private readonly uint _deviceId;
+        private readonly byte[] _cacheUuid;
 
         private bool _disposed;
         private int _warnedMainCacheOverBudget;
@@ -148,7 +151,7 @@ namespace Ryujinx.Graphics.Vulkan
         public PipelineCache MainCache => _mainState.Cache;
         public bool SupportsNonBlockingPipelineCreation { get; }
 
-        public PipelineCacheManager(
+        public unsafe PipelineCacheManager(
             Vk api,
             VulkanPhysicalDevice physicalDevice,
             Device device,
@@ -167,6 +170,9 @@ namespace Ryujinx.Graphics.Vulkan
             long workerBudget = Math.Max(MinimumCacheBudget, (TotalCacheBudget - MainCacheBudget) / Math.Max(1, workerCount));
 
             PhysicalDeviceProperties properties = physicalDevice.PhysicalDeviceProperties;
+            _vendorId = properties.VendorID;
+            _deviceId = properties.DeviceID;
+            _cacheUuid = new ReadOnlySpan<byte>(properties.PipelineCacheUuid, 16).ToArray();
             string cacheKey = $"{properties.VendorID:X8}-{properties.DeviceID:X8}-{properties.DriverVersion:X8}";
 
             string mainCachePath = null;
@@ -432,7 +438,7 @@ namespace Ryujinx.Graphics.Vulkan
         /// </summary>
         /// <param name="path">Snapshot path, or null if snapshots are not being kept</param>
         /// <param name="budget">Largest snapshot worth loading</param>
-        private MappedSnapshot OpenSnapshot(string path, long budget)
+        private unsafe MappedSnapshot OpenSnapshot(string path, long budget)
         {
             if (string.IsNullOrEmpty(path) || !File.Exists(path))
             {
@@ -452,7 +458,16 @@ namespace Ryujinx.Graphics.Vulkan
                     return null;
                 }
 
-                return MappedSnapshot.Open(path, info.Length);
+                MappedSnapshot snapshot = MappedSnapshot.Open(path, info.Length);
+                ReadOnlySpan<byte> header = new(snapshot.Pointer, (int)Math.Min(snapshot.Length, PipelineCacheHeader.Size));
+                if (!PipelineCacheHeader.IsCompatible(header, _vendorId, _deviceId, _cacheUuid))
+                {
+                    snapshot.Dispose();
+                    Logger.Warning?.PrintMsg(LogClass.Gpu,
+                        $"Ignoring Vulkan pipeline cache with an incompatible or truncated header: {path}");
+                    return null;
+                }
+                return snapshot;
             }
             catch (IOException exception)
             {

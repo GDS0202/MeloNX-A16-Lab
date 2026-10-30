@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.InteropServices;
-using System.Threading;
 
 namespace Ryujinx.Memory
 {
@@ -22,7 +21,6 @@ namespace Ryujinx.Memory
         private const uint TaskVmInfoCount = 87;
         private const int PhysFootprintIndex = 144 / 8;
 
-        private static long _cachedTotalBytes = -1;
         public static bool IsConstrained => OperatingSystem.IsIOS();
         
         public static ulong AvailableBytes
@@ -62,7 +60,8 @@ namespace Ryujinx.Memory
                     ulong* info = stackalloc ulong[(int)(TaskVmInfoCount / 2 + 1)];
                     uint count = TaskVmInfoCount;
 
-                    if (TaskInfo(MachTaskSelf(), TaskVmInfo, info, &count) != 0)
+                    if (TaskInfo(MachTaskSelf(), TaskVmInfo, info, &count) != 0 ||
+                        count < (PhysFootprintIndex + 1) * 2)
                     {
                         return 0;
                     }
@@ -81,13 +80,8 @@ namespace Ryujinx.Memory
         {
             get
             {
-                long cached = Interlocked.Read(ref _cachedTotalBytes);
-
-                if (cached >= 0)
-                {
-                    return (ulong)cached;
-                }
-
+                // The process limit may change after donation, foregrounding or memory pressure.
+                // This estimate is requested at cache initialization, never for every frame.
                 ulong total = 0;
 
                 if (IsConstrained)
@@ -99,8 +93,6 @@ namespace Ryujinx.Memory
                         total = Math.Max(FootprintBytes + available, MinimumPlausibleBudget);
                     }
                 }
-
-                Interlocked.Exchange(ref _cachedTotalBytes, (long)total);
 
                 return total;
             }

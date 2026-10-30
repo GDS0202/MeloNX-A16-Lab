@@ -1,0 +1,11 @@
+candidate:
+Production DescriptorSetUpdater.UpdateAndBind/4 parameters: 0 newarr instructions.
+Production DescriptorSetUpdater.UpdateAndBind/3 parameters: 0 newarr instructions.
+Total: 0 newarr instructions across 2 overloads.
+
+control:
+Production DescriptorSetUpdater.UpdateAndBind/4 parameters: 0 newarr instructions.
+Production DescriptorSetUpdater.UpdateAndBind/3 parameters: 6 newarr instructions.
+Total: 6 newarr instructions across 2 overloads.
+
+Expected control exit 1, candidate exit 0.

@@ -1,10 +1,53 @@
-# MeloNX A16 Lab 0.1 — candidata sperimentale
+# MeloNX A16 Lab 0.2 — candidata sperimentale
 
 Fork del sorgente completo ufficiale **MeloNX 2.7**, commit
 `13700519f3abc4e6d7ed8a065b118b2cc59bcd67` (tag annotato
 `e91d806742874ec2a98835a23a2f85b668760dba`). Obiettivo: ridurre attese e
 irregolarità dei frame su iPad A16 mantenendo scala 1×. Non sono ancora stati
 misurati miglioramenti sull'iPad e non è una release stabile.
+
+**Repository pubblica:** https://github.com/GDS0202/MeloNX-A16-Lab
+
+**[Audit completo, fonti e decisioni prima degli interventi](AUDIT_2026-10-30_IT.md)**.
+L'iPad A16 ha 5 core CPU e 4 core GPU: il dimensionamento non assume i 6 core
+CPU degli iPhone A16. Le scelte sperimentali rimangono distinguibili dalle
+correzioni di stabilità.
+
+## Novità 0.2
+
+- **Carichi CPU su A16:** riconoscimento del nome della GPU Metal e Apple8,
+  feedback reale di temperatura e risparmio energetico. La conversione BC→ETC2
+  usa al massimo due partecipanti, uno quando caldo o in Low Power Mode.
+  I compilatori distinguono dipendenze del renderer, precompilazione e manutenzione
+  tramite QoS Apple; un fallimento dell'API usa le priorità gestite e viene registrato.
+  Non vengono forzati core specifici o modificate frequenze/istruzioni guest.
+- **SIMD 128 bit:** espansione della palette BC1/BC2/BC3 anche sui backend senza
+  AVX2, incluso ARM64. Il confronto di esattezza è verificato su x64 con SIMD128
+  forzato e con fallback scalare; il guadagno e il codice NativeAOT su A16 sono
+  ancora da misurare. Il percorso nativo BC del driver, se disponibile, rimane
+  preferibile e non viene disabilitato.
+- **Meno garbage durante i draw:** rimossi gli array temporanei a un elemento
+  nel metodo di aggiornamento dei descrittori; controllo dell'IL compilato
+  disponibile nei test. Corretti i controlli di span vuoti nel fallback dummy.
+- **JIT:** i lock della cache vengono rilasciati anche se una callback lancia
+  un'eccezione, Count è sincronizzato, la registrazione del thread viene pulita
+  in finally e l'inizializzazione dell'allocatore condiviso è serializzata.
+- **Memoria:** il budget del processo viene riletto alla creazione delle cache;
+  un primo valore 0 non resta memorizzato. Verificata la lunghezza restituita da
+  task_info prima di leggere il footprint. Un evento Critical può superare il
+  cooldown di un Warning precedente.
+- **Vulkan:** controllo vendor/device/UUID dell'header prima di caricare una
+  cache; preferenza per tre immagini swapchain MoltenVK entro i limiti dichiarati.
+- **Diagnostica:** ai dati A16Pacing si aggiungono temperatura (0 nominal,
+  1 fair, 2 serious, 3 critical), Low Power Mode, footprint/headroom, contatori GC
+  cumulativi e code/azioni dei compilatori. Non sono misure del tempo GPU.
+
+`A16 CPU workload control`, vicino al preset, vale per **tutti i giochi** e
+richiede riavvio dell'app. Disattivandolo si ripristina la concorrenza texture e
+la gestione tradizionale della priorità; le correzioni di stabilità restano.
+Non cambiano automaticamente risoluzione, salvataggi o impostazioni del titolo.
+Il limite di concorrenza può allungare la conversione di singole texture: va
+valutato insieme alla regolarità dei frame.
 
 ## Modifiche effettive
 
@@ -39,8 +82,10 @@ dimostra, da sola, la causa degli scatti di BOTW.
 I test delle code usano il file di produzione, sostituendo il driver con un
 simulatore controllabile. Non sono benchmark dell'emulazione.
 
-La compilazione C# gestita non è una build iOS. **Swift, NativeAOT iOS, firma,
-installazione, JIT, estensione RAM e BOTW sul dispositivo restano da verificare**.
+La compilazione C# gestita non è una build iOS. La CI verifica sintassi Swift
+ed esegue il type-check del solo ponte hardware contro l'SDK iOS, senza linkare.
+**Compilazione completa Swift/NativeAOT iOS, firma, installazione, JIT,
+estensione RAM e BOTW sul dispositivo restano da verificare**.
 Non sono dichiarati incrementi di FPS o riduzioni percentuali degli scatti.
 
 ## Risoluzione e impostazioni
@@ -61,7 +106,9 @@ separato e non vengono trasferiti automaticamente: conservarne una copia.
 
 ## Build cloud senza un Mac personale
 
-Dopo la pubblicazione di questa repository su GitHub:
+**Generazione IPA sospesa su richiesta dell'utente. Non è stata avviata.**
+Le seguenti istruzioni servono alla fase successiva, dopo le altre modifiche:
+
 
 1. Aprire **Actions → Build A16 unsigned IPA → Run workflow**.
 2. Selezionare `optimized`.
@@ -78,10 +125,14 @@ problemi di compilazione o firma. Su Mac: `bash a16/build_ipa.sh`.
 
 ## Controllo e confronto
 
-Il workflow offre `control`: ripristina esattamente scheduler e gestore cache
-della 2.7, mantenendo uguali profilo e misure. I due sorgenti originali e SHA-256
-sono in `a16/control/`. `prepare_control.py` modifica file: usarlo soltanto nel
-checkout CI eliminabile.
+Il workflow offre `control`: ripristina scheduler, cache driver, decoder,
+transcoder e aggiornamento descrittori della 2.7, disattiva la politica CPU A16
+e usa la Window 0.1 con le stesse misure degli intervalli CPU (senza preferenza
+aggiuntiva per triple buffering). Il controllo mantiene preset, branding e
+correzioni di sicurezza/stabilità del JIT e della pressione memoria. Non è un
+confronto tra l'app ufficiale immutata e la fork: isola gli interventi prestazionali.
+Snapshot, destinazioni e SHA-256 sono in `a16/control/`. `prepare_control.py`
+modifica file: usarlo soltanto nel checkout CI eliminabile.
 
 Candidata e controllo condividono il bundle ID sperimentale e si alternano con
 reinstallazione sul medesimo contenitore e stessa firma. L'originale resta a parte.
@@ -103,6 +154,9 @@ media dei percentili per ricavare un percentile globale.
 ```sh
 dotnet build src/Ryujinx.Graphics.Vulkan/Ryujinx.Graphics.Vulkan.csproj -c Release -m:1
 dotnet run --project tests/A16.Regression/A16.Regression.csproj -c Release
+DOTNET_EnableAVX2=0 dotnet run --project tests/A16.Regression/A16.Regression.csproj -c Release --no-build
+DOTNET_EnableHWIntrinsic=0 dotnet run --project tests/A16.Regression/A16.Regression.csproj -c Release --no-build
+dotnet run --project tests/A16.Regression/A16.Regression.csproj -c Release --no-build -- --inspect-descriptors src/Ryujinx.Graphics.Vulkan/bin/Release/net10.0/Ryujinx.Graphics.Vulkan.dll
 python3 -m unittest discover -s a16/tests
 ```
 

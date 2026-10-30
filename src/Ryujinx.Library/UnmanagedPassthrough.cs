@@ -144,6 +144,12 @@ namespace Ryujinx.Library
                 critical != 0 ? MemoryPressureLevel.Critical : MemoryPressureLevel.Warning);
         }
 
+        [UnmanagedCallersOnly(EntryPoint = "report_host_state")]
+        public static void ReportHostState(byte thermalState, byte lowPowerMode)
+        {
+            HostPerformance.ReportPowerState(thermalState, lowPowerMode != 0);
+        }
+
         [UnmanagedCallersOnly(EntryPoint = "init_dualmapping")]
         public static bool InitializeDualMapping() 
         {

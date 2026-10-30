@@ -91,6 +91,7 @@ namespace Ryujinx.Cpu.LightningJit.Cache
         private readonly Translator _translator;
         private MemoryCache _sharedCache;
         private static DualMappedJitAllocator _sharedCacheAlloc;
+        private static readonly Lock InitializationLock = new();
         private readonly Lock _lock = new();
 
         public DualMappedNoWxCache(Translator translator)
@@ -101,10 +102,11 @@ namespace Ryujinx.Cpu.LightningJit.Cache
 
         public static void InitMemoryCache() 
         {
-            if (_sharedCacheAlloc != null)
-                return;
-
-            _sharedCacheAlloc = new(SharedCacheSize);
+            lock (InitializationLock)
+            {
+                // Publish only a fully initialized allocator; failed attempts remain retryable.
+                _sharedCacheAlloc ??= new(SharedCacheSize);
+            }
         }
 
         public unsafe nint Map(ReadOnlySpan<byte> code, ulong guestAddress, ulong guestSize)

@@ -5,8 +5,14 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/Ryujinx.Common/Ryujinx.Common.csproj" />
+    <ProjectReference Include="../../src/Ryujinx.Memory/Ryujinx.Memory.csproj" />
+    <ProjectReference Include="../../src/Ryujinx.Graphics.Texture/Ryujinx.Graphics.Texture.csproj" />
     <PackageReference Include="Silk.NET.Vulkan" />
     <Compile Include="$(SchedulerUnderTest)" Link="BackgroundCompilationScheduler.cs" />
     <Compile Include="../../src/Ryujinx.Graphics.Vulkan/FrameTimeMetrics.cs" Link="FrameTimeMetrics.cs" />
+    <Compile Include="../../src/Ryujinx.Graphics.Vulkan/PipelineCacheHeader.cs" Link="PipelineCacheHeader.cs" />
+    <Compile Include="../../src/Ryujinx.Graphics.Gpu/MemoryPressureTrimPolicy.cs" Link="MemoryPressureTrimPolicy.cs" />
+    <Compile Include="../../src/Ryujinx.Cpu/LightningJit/TranslatorCache.cs" Link="TranslatorCache.cs" />
+    <Compile Include="../../src/ARMeilleure/Translation/IntervalTree.cs" Link="IntervalTree.cs" />
   </ItemGroup>
 </Project>

@@ -1,4 +1,5 @@
 using Ryujinx.Common.Memory;
+using Ryujinx.Common.Utilities;
 using Ryujinx.Graphics.Texture.Encoders;
 using System;
 using System.Runtime.InteropServices;
@@ -18,6 +19,16 @@ namespace Ryujinx.Graphics.Texture
         /// done on the calling thread, as the scheduling overhead would dominate.
         /// </summary>
         private const int BlocksPerBatch = 256;
+        private static readonly ParallelOptions DefaultParallelism = new();
+        private static readonly ParallelOptions OneWorker = new() { MaxDegreeOfParallelism = 1 };
+        private static readonly ParallelOptions TwoWorkers = new() { MaxDegreeOfParallelism = 2 };
+
+        private static ParallelOptions TranscodeParallelism => HostPerformance.TextureWorkerLimit switch
+        {
+            1 => OneWorker,
+            2 => TwoWorkers,
+            _ => DefaultParallelism,
+        };
 
         private delegate void BlockTranscoder(ReadOnlySpan<ulong> input, Span<ulong> output);
 
@@ -107,7 +118,7 @@ namespace Ryujinx.Graphics.Texture
                     }
                     else
                     {
-                        Parallel.For(0, (blockCount + BlocksPerBatch - 1) / BlocksPerBatch, ProcessBatch);
+                        Parallel.For(0, (blockCount + BlocksPerBatch - 1) / BlocksPerBatch, TranscodeParallelism, ProcessBatch);
                     }
 
                     offset += size;
@@ -178,7 +189,7 @@ namespace Ryujinx.Graphics.Texture
             {
                 int batchCount = (blockCount + BlocksPerBatch - 1) / BlocksPerBatch;
 
-                Parallel.For(0, batchCount, batch =>
+                Parallel.For(0, batchCount, TranscodeParallelism, batch =>
                 {
                     int start = batch * BlocksPerBatch * ulongsPerBlock;
                     int length = Math.Min(BlocksPerBatch * ulongsPerBlock, ulongCount - start);

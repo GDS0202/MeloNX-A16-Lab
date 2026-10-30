@@ -28,6 +28,7 @@ struct PerGameSettingsView: View {
     @State private var isShowingGameController = false
     @State private var showOSIcon = true
     @State private var showingAppIconSwitcher = false
+    @AppStorage("a16WorkloadPolicyEnabled") private var a16WorkloadPolicyEnabled = true
     @FocusState private var isArgumentsKeyboardVisible: Bool
     
     private var config: Binding<Options> {
@@ -256,8 +257,9 @@ struct PerGameSettingsView: View {
                 } label: {
                     Label("Apply A16 Performance – 1×", systemImage: "speedometer")
                 }
+                Toggle("A16 CPU workload control", isOn: $a16WorkloadPolicyEnabled)
             } footer: {
-                Text("Applies to this game: handheld 1×, shader cache, experimental async compilation and lightweight filtering. Game-controlled dynamic resolution is independent. Async compilation may temporarily omit new effects; it can be disabled below.")
+                Text("The preset applies to this game: handheld 1×, shader cache, experimental async compilation and lightweight filtering. Game-controlled dynamic resolution is independent. Async compilation may temporarily omit new effects. CPU workload control applies to all games on a detected A16 and requires restarting the app; it adapts texture conversion and compiler priority without changing resolution.")
             }
 
             // Resolution Scale

@@ -71,6 +71,7 @@ uint8_t InvokeCallback(const char* name, const void* data, int32_t len);
 uint64_t execute_function_pointer(void* functionPtr);
 
 void report_memory_pressure(uint8_t critical);
+void report_host_state(uint8_t thermalState, uint8_t lowPowerMode);
 
 void offer_donated_memory(void* baseAddress, uint64_t size);
 

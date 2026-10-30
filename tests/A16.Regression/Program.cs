@@ -104,8 +104,9 @@ internal static class Program
         Check(GC.GetAllocatedBytesForCurrentThread() - before == 0, "Histogram accumulation allocated");
     }
 
-    public static int Main()
+    public static int Main(string[] args)
     {
+        if (args.Length == 2 && args[0] == "--inspect-descriptors") return DescriptorChecks.Inspect(args[1]);
         Test("pipeline completion precedes maintenance", CompletionBeforeMaintenance);
         Test("maintenance failure does not fail pipeline", MaintenanceFailureDoesNotFailPipeline);
         Test("demand, promotion and checkpoint deferral", DemandAndPromotionPrecedeSpeculation);
@@ -113,6 +114,12 @@ internal static class Program
         Test("shutdown and rejection of later work", ShutdownWaitsForMaintenance);
         Test("quantiles, thresholds, validation and reset", Metrics);
         Test("no per-frame metrics allocation", NoPerFrameAllocation);
+        Test("JIT exception cleanup and concurrent interval operations", HostChecks.JitExceptionAndConcurrency);
+        Test("critical pressure bypasses warning cooldown", HostChecks.MemoryPressureEscalation);
+        Test("A16 thermal/power policy and recovery", HostChecks.AdaptiveWorkload);
+        Test("pipeline cache identity and truncation", HostChecks.CacheIdentity);
+        Test("BC1/2/3 exact color and alpha reference", TextureChecks.PaletteExpansion);
+        Test("parallel transcode boundaries and trailing bytes", TextureChecks.ParallelTextureTail);
         Console.WriteLine($"{_passed} checks passed. No iPad or GPU performance claim is made.");
         return 0;
     }

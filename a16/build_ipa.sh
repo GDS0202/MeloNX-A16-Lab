@@ -34,7 +34,7 @@ ditto "$build_root/MeloNXA16.xcarchive/Products/Applications/MeloNX.app" "$build
 python3 a16/verify_app.py "$build_root/package/Payload/MeloNX.app" "$native_core"
 (
  cd "$build_root/package"
- ditto -c -k --keepParent Payload "../MeloNX_A16_Lab_0.1_${variant}_UNSIGNED.ipa"
+ ditto -c -k --keepParent Payload "../MeloNX_A16_Lab_0.2_${variant}_UNSIGNED.ipa"
 )
-shasum -a 256 "$build_root/MeloNX_A16_Lab_0.1_${variant}_UNSIGNED.ipa" > "$build_root/MeloNX_A16_Lab_0.1_${variant}_UNSIGNED.ipa.sha256"
+shasum -a 256 "$build_root/MeloNX_A16_Lab_0.2_${variant}_UNSIGNED.ipa" > "$build_root/MeloNX_A16_Lab_0.2_${variant}_UNSIGNED.ipa.sha256"
 echo "Unsigned IPA built. Signing with memory entitlement, JIT and device testing still required."

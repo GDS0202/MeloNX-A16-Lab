@@ -4,6 +4,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Silk.NET.Vulkan;
 using Ryujinx.Common.Logging;
+using Ryujinx.Common.Utilities;
+using System.Diagnostics;
 
 namespace Ryujinx.Graphics.Vulkan
 {
@@ -15,6 +17,8 @@ namespace Ryujinx.Graphics.Vulkan
 
         public static int PipelineWorkerCount => GetBackgroundCompileThreadCount();
         public static int PipelineCacheCount => PipelineWorkerCount + 1;
+
+        public string GetDiagnostics() => $"shader[{_shaderQueue.GetDiagnostics()}] pipeline[{_pipelineQueue.GetDiagnostics()}]";
 
         public BackgroundCompilationScheduler(PipelineCacheManager pipelineCacheManager)
         {
@@ -71,6 +75,8 @@ namespace Ryujinx.Graphics.Vulkan
                 public TaskCompletionSource<bool> Completion { get; }
                 public LinkedListNode<WorkItem> Node { get; set; }
                 public bool Demanded { get; set; }
+                public bool HighPriority { get; set; }
+                public long ExecutionTicks { get; private set; }
 
                 public WorkItem(Action<int> action, Action<int> afterCompletion)
                 {
@@ -81,6 +87,7 @@ namespace Ryujinx.Graphics.Vulkan
 
                 public void Execute(int workerIndex)
                 {
+                    long started = Stopwatch.GetTimestamp();
                     try
                     {
                         _action(workerIndex);
@@ -92,9 +99,14 @@ namespace Ryujinx.Graphics.Vulkan
                     }
                     finally
                     {
+                        ExecutionTicks = Stopwatch.GetTimestamp() - started;
                         try
                         {
-                            _afterCompletion?.Invoke(workerIndex);
+                            if (_afterCompletion != null)
+                            {
+                                HostPerformance.SetCompilerQos(demanded: false);
+                                _afterCompletion(workerIndex);
+                            }
                         }
                         catch (Exception exception)
                         {
@@ -119,6 +131,18 @@ namespace Ryujinx.Graphics.Vulkan
             private readonly string _name;
 
             private bool _stopping;
+            private long _completed;
+            private long _failed;
+            private long _slow;
+
+            public string GetDiagnostics()
+            {
+                lock (_queueLock)
+                {
+                    return $"done={Interlocked.Read(ref _completed)}, failed={Interlocked.Read(ref _failed)}, " +
+                        $">50ms={Interlocked.Read(ref _slow)}, queued={_demandQueue.Count + _highPriorityQueue.Count + _lowPriorityQueue.Count}";
+                }
+            }
 
             public bool HasPendingDemand
             {
@@ -144,8 +168,9 @@ namespace Ryujinx.Graphics.Vulkan
                     {
                         IsBackground = true,
                         Name = $"Vulkan {name} Compile {index}",
-                        Priority = ThreadPriority.BelowNormal,
                     };
+                    // Legacy priority APIs can permanently opt a pthread out of Apple QoS.
+                    if (!HostPerformance.IsA16) _threads[index].Priority = ThreadPriority.BelowNormal;
                 }
 
                 
@@ -153,8 +178,8 @@ namespace Ryujinx.Graphics.Vulkan
                 {
                     IsBackground = true,
                     Name = $"Vulkan {name} Demand Compile",
-                    Priority = ThreadPriority.Normal,
                 };
+                if (!HostPerformance.IsA16) _threads[workerCount].Priority = ThreadPriority.Normal;
 
                 foreach (Thread thread in _threads)
                 {
@@ -219,6 +244,7 @@ namespace Ryujinx.Graphics.Vulkan
                         : _lowPriorityQueue;
 
                 item.Demanded = demanded;
+                item.HighPriority = highPriority;
                 item.Node = queue.AddLast(item);
             }
 
@@ -241,7 +267,11 @@ namespace Ryujinx.Graphics.Vulkan
                         }
                     }
 
+                    HostPerformance.SetCompilerQos(item.Demanded, item.HighPriority);
                     item.Execute(workerIndex);
+                    Interlocked.Increment(ref _completed);
+                    if (item.Completion.Task.IsFaulted) Interlocked.Increment(ref _failed);
+                    if (item.ExecutionTicks > Stopwatch.Frequency / 20) Interlocked.Increment(ref _slow);
 
                     lock (_queueLock)
                     {

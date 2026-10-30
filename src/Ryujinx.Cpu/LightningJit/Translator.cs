@@ -107,10 +107,15 @@ namespace Ryujinx.Cpu.LightningJit
 
             NativeInterface.RegisterThread(context, Memory, this);
 
-            Stubs.DispatchLoop(context.NativeContextPtr, address);
-
-            NativeInterface.UnregisterThread();
-            _noWxCache?.ClearEntireThreadLocalCache();
+            try
+            {
+                Stubs.DispatchLoop(context.NativeContextPtr, address);
+            }
+            finally
+            {
+                NativeInterface.UnregisterThread();
+                _noWxCache?.ClearEntireThreadLocalCache();
+            }
         }
 
         internal nint GetOrTranslatePointer(nint framePointer, ulong address, ExecutionMode mode)

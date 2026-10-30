@@ -10,7 +10,15 @@ namespace Ryujinx.Cpu.LightningJit
         private readonly IntervalTree<ulong, T> _tree;
         private readonly ReaderWriterLockSlim _treeLock;
 
-        public int Count => _tree.Count;
+        public int Count
+        {
+            get
+            {
+                _treeLock.EnterReadLock();
+                try { return _tree.Count; }
+                finally { _treeLock.ExitReadLock(); }
+            }
+        }
 
         public TranslatorCache()
         {
@@ -26,71 +34,57 @@ namespace Ryujinx.Cpu.LightningJit
         public bool AddOrUpdate(ulong address, ulong size, T value, Func<ulong, T, T> updateFactoryCallback)
         {
             _treeLock.EnterWriteLock();
-            bool result = _tree.AddOrUpdate(address, address + size, value, updateFactoryCallback);
-            _treeLock.ExitWriteLock();
-
-            return result;
+            try { return _tree.AddOrUpdate(address, address + size, value, updateFactoryCallback); }
+            finally { _treeLock.ExitWriteLock(); }
         }
 
         public T GetOrAdd(ulong address, ulong size, T value)
         {
             _treeLock.EnterWriteLock();
-            value = _tree.GetOrAdd(address, address + size, value);
-            _treeLock.ExitWriteLock();
-
-            return value;
+            try { return _tree.GetOrAdd(address, address + size, value); }
+            finally { _treeLock.ExitWriteLock(); }
         }
 
         public bool Remove(ulong address)
         {
             _treeLock.EnterWriteLock();
-            bool removed = _tree.Remove(address) != 0;
-            _treeLock.ExitWriteLock();
-
-            return removed;
+            try { return _tree.Remove(address) != 0; }
+            finally { _treeLock.ExitWriteLock(); }
         }
 
         public void Clear()
         {
             _treeLock.EnterWriteLock();
-            _tree.Clear();
-            _treeLock.ExitWriteLock();
+            try { _tree.Clear(); }
+            finally { _treeLock.ExitWriteLock(); }
         }
 
         public bool ContainsKey(ulong address)
         {
             _treeLock.EnterReadLock();
-            bool result = _tree.ContainsKey(address);
-            _treeLock.ExitReadLock();
-
-            return result;
+            try { return _tree.ContainsKey(address); }
+            finally { _treeLock.ExitReadLock(); }
         }
 
         public bool TryGetValue(ulong address, out T value)
         {
             _treeLock.EnterReadLock();
-            bool result = _tree.TryGet(address, out value);
-            _treeLock.ExitReadLock();
-
-            return result;
+            try { return _tree.TryGet(address, out value); }
+            finally { _treeLock.ExitReadLock(); }
         }
 
         public int GetOverlaps(ulong address, ulong size, ref ulong[] overlaps)
         {
             _treeLock.EnterReadLock();
-            int count = _tree.Get(address, address + size, ref overlaps);
-            _treeLock.ExitReadLock();
-
-            return count;
+            try { return _tree.Get(address, address + size, ref overlaps); }
+            finally { _treeLock.ExitReadLock(); }
         }
 
         public List<T> AsList()
         {
             _treeLock.EnterReadLock();
-            List<T> list = _tree.AsList();
-            _treeLock.ExitReadLock();
-
-            return list;
+            try { return _tree.AsList(); }
+            finally { _treeLock.ExitReadLock(); }
         }
     }
 }

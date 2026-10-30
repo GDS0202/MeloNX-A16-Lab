@@ -2,6 +2,20 @@
   "upstream_commit": "13700519f3abc4e6d7ed8a065b118b2cc59bcd67",
   "files": {
     "BackgroundCompilationScheduler.cs": "9d49665cffdd0263bd83c056eddcbceb56580ec75b007fc9908f4fdf1a6eb571",
-    "PipelineCacheManager.cs": "48dc8d422dbb9922d521895e92797cdba5a94f1a3dd3d8404dee6356f92dd29c"
-  }
+    "PipelineCacheManager.cs": "48dc8d422dbb9922d521895e92797cdba5a94f1a3dd3d8404dee6356f92dd29c",
+    "BCnDecoder.cs": "51fb39abba08c17a7101948f3f8ec981b7949cbd5723b7c6df1cf42b2f1c9062",
+    "ETC2Transcoder.cs": "32fca5ab38478c1b76280a5f0b619fd62162e987dc5f87aee1c3b2eb96f9531d",
+    "DescriptorSetUpdater.cs": "6b7f2c60bf579f6226326c3c3225b9d12a03879f795ecd4179ae0903552361fc",
+    "Window.cs": "6aa7cfca4ad8c98d916564d773614d061bf2d766ee68c8148cf55e215ddca07e"
+  },
+  "targets": {
+    "BackgroundCompilationScheduler.cs": "src/Ryujinx.Graphics.Vulkan/BackgroundCompilationScheduler.cs",
+    "PipelineCacheManager.cs": "src/Ryujinx.Graphics.Vulkan/PipelineCacheManager.cs",
+    "BCnDecoder.cs": "src/Ryujinx.Graphics.Texture/BCnDecoder.cs",
+    "ETC2Transcoder.cs": "src/Ryujinx.Graphics.Texture/ETC2Transcoder.cs",
+    "DescriptorSetUpdater.cs": "src/Ryujinx.Graphics.Vulkan/DescriptorSetUpdater.cs",
+    "Window.cs": "src/Ryujinx.Graphics.Vulkan/Window.cs"
+  },
+  "instrumented_window_base": "local 67c58c6 / public 730ef708eca3b69edc9c4b4695ab6f69214a7031; upstream Window plus identical CPU interval metrics",
+  "retained_in_both": "JIT exception/initialization fixes, fresh host memory estimate, memory pressure escalation policy, preset, branding, dependencies"
 }

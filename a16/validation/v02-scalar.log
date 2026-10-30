@@ -1,0 +1,20 @@
+PASS pipeline completion precedes maintenance
+PASS maintenance failure does not fail pipeline
+PASS demand, promotion and checkpoint deferral
+PASS compile errors and later concurrent work
+PASS shutdown and rejection of later work
+PASS quantiles, thresholds, validation and reset
+PASS no per-frame metrics allocation
+00:00:00.127 |W| Vulkan Pipeline Compile 0 Gpu : Background compilation maintenance failed: System.IO.IOException: Injected cache I/O failure
+   at Program.<>c__DisplayClass7_0.<MaintenanceFailureDoesNotFailPipeline>b__2(Int32 _, Boolean _) in /workspace/scratch/ef29500c2c1b/melonx-a16/tests/A16.Regression/Program.cs:line 26
+   at Ryujinx.Graphics.Vulkan.PipelineCacheManager.NotifyWorkerPipelineCreated(Int32 index, Boolean allowCheckpoint) in /workspace/scratch/ef29500c2c1b/melonx-a16/tests/A16.Regression/FakePipelineCacheManager.cs:line 12
+   at Ryujinx.Graphics.Vulkan.BackgroundCompilationScheduler.<>c__DisplayClass11_0.<SchedulePipelineCompile>b__1(Int32 workerIndex) in /workspace/scratch/ef29500c2c1b/melonx-a16/src/Ryujinx.Graphics.Vulkan/BackgroundCompilationScheduler.cs:line 48
+   at Ryujinx.Graphics.Vulkan.BackgroundCompilationScheduler.WorkerQueue.WorkItem.Execute(Int32 workerIndex) in /workspace/scratch/ef29500c2c1b/melonx-a16/src/Ryujinx.Graphics.Vulkan/BackgroundCompilationScheduler.cs:line 108
+PASS JIT exception cleanup and concurrent interval operations
+PASS critical pressure bypasses warning cooldown
+PASS A16 thermal/power policy and recovery
+PASS pipeline cache identity and truncation
+Texture backend: AVX2=False, Vector128=False
+PASS BC1/2/3 exact color and alpha reference
+PASS parallel transcode boundaries and trailing bytes
+13 checks passed. No iPad or GPU performance claim is made.

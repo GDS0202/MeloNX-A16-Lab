@@ -340,9 +340,7 @@ namespace Ryujinx.Graphics.Gpu
         private const ulong TrimMiB = 1024 * 1024;
         private const ulong ComfortableHeadroomBytes = 768 * TrimMiB;
         private const ulong CriticalHeadroomBytes = 256 * TrimMiB;
-        private const long MinimumTrimIntervalMs = 2000;
-
-        private long _lastTrimTimestamp;
+        private readonly MemoryPressureTrimPolicy _trimPolicy = new();
 
         /// <summary>
         /// Evicts GPU resource caches in response to host memory pressure, in proportion to what
@@ -376,12 +374,10 @@ namespace Ryujinx.Graphics.Gpu
 
             long now = Environment.TickCount64;
 
-            if (_lastTrimTimestamp != 0 && now - _lastTrimTimestamp < MinimumTrimIntervalMs)
+            if (!_trimPolicy.TryBeginTrim(level, now))
             {
                 return;
             }
-
-            _lastTrimTimestamp = now;
 
             ulong evicted = 0;
 

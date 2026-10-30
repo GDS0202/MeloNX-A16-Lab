@@ -34,6 +34,7 @@ var environment: [EnvironmentVariable] = [
 
 func initEnvironmentVariables() {
     if let device = MTLCreateSystemDefaultDevice() {
+        HostRuntime.configureEnvironment(device: device)
         environment.append(contentsOf: [
             .init(string: "MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", value: device.argumentBuffersSupport.rawValue >= MTLArgumentBuffersTier.tier2.rawValue ? "1" : "0")
         ])
@@ -67,6 +68,7 @@ func initEnvironmentVariables() {
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
     static var orientationLock = UIInterfaceOrientationMask.all
+    private var hostStateObservers: [NSObjectProtocol] = []
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         SDL_SetMainReady()
@@ -75,6 +77,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         JIT26BreakpointHandler()
         initEnvironmentVariables()
         Ryujinx.initialize()
+        hostStateObservers = HostRuntime.observePowerState()
         CrashHandlerInstaller.install()
         ThemeManager.shared.applyUIKitAppearance()
         UIDevice.current.beginGeneratingDeviceOrientationNotifications()

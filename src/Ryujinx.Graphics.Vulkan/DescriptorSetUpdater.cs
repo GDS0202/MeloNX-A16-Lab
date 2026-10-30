@@ -1194,7 +1194,7 @@ namespace Ryujinx.Graphics.Vulkan
                                     ImageLayout = ImageLayout.General
                                 };
 
-                                dsc.UpdateImages(0, index, new[] { imageInfo }, DescriptorType.CombinedImageSampler);
+                                dsc.UpdateImages(0, index, [imageInfo], DescriptorType.CombinedImageSampler);
                             }
                         }
                         else
@@ -1203,7 +1203,7 @@ namespace Ryujinx.Graphics.Vulkan
                             {
                                 int index = binding + i;
                                 var bufferView = _bufferTextureRefs[index]?.GetBufferView(cbs, false) ?? default(BufferView);
-                                dsc.UpdateBufferImages(0, index, new[] { bufferView }, DescriptorType.UniformTexelBuffer);
+                                dsc.UpdateBufferImages(0, index, [bufferView], DescriptorType.UniformTexelBuffer);
                             }
                         }
                     }
@@ -1214,36 +1214,36 @@ namespace Ryujinx.Graphics.Vulkan
                         if (segment.Type != ResourceType.BufferTexture)
                         {
                             var imageInfos = arrayRef.Array.GetImageInfos(_gd, cbs, _dummyTexture, _dummySampler);
-                            if (imageInfos != null)
+                            if (!imageInfos.IsEmpty)
                             {
                                 for (int i = 0; i < imageInfos.Length && i < count; i++)
                                 {
-                                    dsc.UpdateImages(0, binding + i, new[] { imageInfos[i] }, DescriptorType.CombinedImageSampler);
+                                    dsc.UpdateImages(0, binding + i, [imageInfos[i]], DescriptorType.CombinedImageSampler);
                                 }
                             }
                             else
                             {
                                 for (int i = 0; i < count; i++)
                                 {
-                                    dsc.UpdateImages(0, binding + i, new[] { dummyImageInfo }, DescriptorType.CombinedImageSampler);
+                                    dsc.UpdateImages(0, binding + i, [dummyImageInfo], DescriptorType.CombinedImageSampler);
                                 }
                             }
                         }
                         else
                         {
                             var bufferViews = arrayRef.Array.GetBufferViews(cbs);
-                            if (bufferViews != null)
+                            if (!bufferViews.IsEmpty)
                             {
                                 for (int i = 0; i < bufferViews.Length && i < count; i++)
                                 {
-                                    dsc.UpdateBufferImages(0, binding + i, new[] { bufferViews[i] }, DescriptorType.UniformTexelBuffer);
+                                    dsc.UpdateBufferImages(0, binding + i, [bufferViews[i]], DescriptorType.UniformTexelBuffer);
                                 }
                             }
                             else
                             {
                                 for (int i = 0; i < count; i++)
                                 {
-                                    dsc.UpdateBufferImages(0, binding + i, new[] { default(BufferView) }, DescriptorType.UniformTexelBuffer);
+                                    dsc.UpdateBufferImages(0, binding + i, [default(BufferView)], DescriptorType.UniformTexelBuffer);
                                 }
                             }
                         }

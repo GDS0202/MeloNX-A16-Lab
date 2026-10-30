@@ -834,6 +834,21 @@ namespace Ryujinx.Graphics.Texture
                 outputAsVector256[0] = Avx2.PermuteVar8x32(vClut, indices0);
                 outputAsVector256[1] = Avx2.PermuteVar8x32(vClut, indices1);
             }
+            else if (Vector128.IsHardwareAccelerated)
+            {
+                // Portable 128-bit palette lookup: ARM64 uses its SIMD backend rather
+                // than the scalar fallback used when only the AVX2 path existed.
+                Vector128<uint> palette = Vector128.Create((ReadOnlySpan<uint>)clut);
+                Span<Vector128<uint>> rows = MemoryMarshal.Cast<byte, Vector128<uint>>(output);
+                uint packed = BinaryPrimitives.ReadUInt32LittleEndian(input[4..]);
+
+                for (int row = 0; row < BlockHeight; row++, packed >>= 8)
+                {
+                    Vector128<uint> indices = Vector128.Create(
+                        packed & 3, (packed >> 2) & 3, (packed >> 4) & 3, (packed >> 6) & 3);
+                    rows[row] = Vector128.Shuffle(palette, indices);
+                }
+            }
             else
             {
                 Span<uint> outputAsUint = MemoryMarshal.Cast<byte, uint>(output);
