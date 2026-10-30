@@ -28,9 +28,8 @@ PASS texture recompression OFF and native format preservation
 21 checks passed. No iPad or GPU performance claim is made.
 
 Python archive verification: 6 checks passed.
-Initial source CI de59cc1: Linux complete core and 20 regressions passed; 3 Swift groups and iOS host feedback typecheck passed.
-Full iOS compiler found missing Combine imports in statistics views; fixed in following commit.
-Source CI ee32f5d: complete Linux build + 21 checks (normal, AVX2 off, intrinsics off), descriptor IL, 6 Python, 3 Swift groups and full iOS NativeAOT + app compile/link all passed.
-https://github.com/GDS0202/MeloNX-A16-Lab/actions/runs/41123281363
-The following commit extends native enum persistence tests; see its source CI for the final result.
-No iPad benchmark or visual correctness claim.
+Source CI 34d679cf9a06e7ffea7cd539ced180e517b66a1f: full Linux core build; 21 C# checks under normal, AVX2-off and all-intrinsics-off modes; descriptor IL check; 6 Python; 3 Swift groups including native enum persistence; iOS host feedback SDK typecheck; full iOS NativeAOT + app compile/link all passed.
+https://github.com/GDS0202/MeloNX-A16-Lab/actions/runs/41124473405
+Control variant from ee32f5d prepared in a separate disposable checkout: full managed library build succeeded, 18 inherited warnings, 0 errors.
+The final touch change uses NativeSettingsManager for the four Disable Touch reads; its final SDK verification is in the source CI for master.
+No IPA packaging or device benchmark in source checks. Visual artifacts and actual BOTW stutter improvements still require the iPad.

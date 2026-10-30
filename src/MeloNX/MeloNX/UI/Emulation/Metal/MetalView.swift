@@ -50,7 +50,7 @@ class MetalView: MTKView {
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesBegan(touches, with: event)
         
-        let disabled = UserDefaults.standard.bool(forKey: "disableTouch")
+        let disabled = NativeSettingsManager.shared.disableTouch(false).bool
         guard !disabled else { return }
         
         setAspectRatio()
@@ -68,7 +68,7 @@ class MetalView: MTKView {
         super.touchesEnded(touches, with: event)
         
         
-        let disabled = UserDefaults.standard.bool(forKey: "disableTouch")
+        let disabled = NativeSettingsManager.shared.disableTouch(false).bool
         guard !disabled else {
             for touch in touches {
                 ignoredTouches.remove(touch)
@@ -97,7 +97,7 @@ class MetalView: MTKView {
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesMoved(touches, with: event)
         
-        let disabled = UserDefaults.standard.bool(forKey: "disableTouch")
+        let disabled = NativeSettingsManager.shared.disableTouch(false).bool
         guard !disabled else { return }
         
         setAspectRatio()
@@ -120,7 +120,7 @@ class MetalView: MTKView {
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesCancelled(touches, with: event)
-        let disabled = UserDefaults.standard.bool(forKey: "disableTouch")
+        let disabled = NativeSettingsManager.shared.disableTouch(false).bool
         guard !disabled else {
             for touch in touches {
                 ignoredTouches.remove(touch)

@@ -102,3 +102,7 @@ scritti come rawValue ma non ricostruiti in lettura: ricadevano sul default.
 La lettura ora ricostruisce enum String e Int32, compresi fallback e override,
 verificati nel test Swift con il vero NativeSettingsManager. L'HUD in alto a
 sinistra riserva spazio al pulsante menu.
+
+Anche `Disable Touch` leggeva direttamente la chiave globale nel MetalView,
+ignorando il valore del gioco mostrato dall'interfaccia. Tutte le letture touch
+ora usano lo stesso manager con override/fallback dell'interfaccia.
