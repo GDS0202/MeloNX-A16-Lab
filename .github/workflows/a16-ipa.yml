@@ -1,5 +1,9 @@
 name: Build A16 unsigned IPA
 on:
+  # A change to this workflow triggers the first optimized IPA build.
+  push:
+    branches: [master]
+    paths: ['.github/workflows/a16-ipa.yml']
   workflow_dispatch:
     inputs:
       variant:
@@ -19,7 +23,7 @@ jobs:
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: 1
       DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
-      A16_BUILD_VARIANT: ${{ inputs.variant }}
+      A16_BUILD_VARIANT: ${{ inputs.variant || 'optimized' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -45,7 +49,7 @@ jobs:
       - name: Unsigned IPA
         uses: actions/upload-artifact@v4
         with:
-          name: MeloNX-A16-Lab-${{ inputs.variant }}-unsigned
+          name: MeloNX-A16-Lab-${{ inputs.variant || 'optimized' }}-unsigned
           path: |
             a16/out/*.ipa
             a16/out/*.ipa.sha256
